@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default async function Dashboard() {
   const session = await auth();
@@ -10,13 +11,22 @@ export default async function Dashboard() {
 
   return (
     <div className="py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2" style={{ color: "#0F1117" }}>
-          Welcome, {session.user.name || session.user.email}
-        </h1>
-        <p style={{ color: "#64748B" }}>
-          Your content amplification dashboard
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold mb-2" style={{ color: "#0F1117" }}>
+            Welcome, {session.user.name || session.user.email}
+          </h1>
+          <p style={{ color: "#64748B" }}>
+            Your content amplification dashboard
+          </p>
+        </div>
+        <Link
+          href="/dashboard/settings"
+          className="px-6 py-3 rounded-lg font-semibold text-white hover:opacity-90 transition-opacity"
+          style={{ background: "#8B5CF6" }}
+        >
+          Settings
+        </Link>
       </div>
 
       <div className="p-8 rounded-lg border" style={{ borderColor: "#E2E8F0", background: "#F8FAFC" }}>
