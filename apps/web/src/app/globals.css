@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/* ── Amplifier Brand Tokens ─────────────────────────────────────── */
+:root {
+  --amp-bg:         #FFFFFF;   /* Primary background — white          */
+  --amp-bg-subtle:  #F8FAFC;   /* Subtle background — panels/cards    */
+  --amp-border:     #E2E8F0;   /* Borders / dividers                  */
+  --amp-slate:      #0F1117;   /* Deep Slate — headings               */
+  --amp-purple:     #8B5CF6;   /* Purple — action / brand             */
+  --amp-purple-dark:#7C3AED;   /* Purple hover state                  */
+  --amp-cyan:       #06B6D4;   /* Cyan — accents                      */
+  --amp-text:       #1E293B;   /* Primary text                        */
+  --amp-muted:      #64748B;   /* Muted / secondary text              */
+  --amp-gray:       #E5E7EB;   /* Dividers                            */
+  --amp-white:      #FFFFFF;
+}
+
+@theme inline {
+  --color-background: var(--amp-bg);
+  --color-foreground:  var(--amp-text);
+
+  /* Brand palette as Tailwind utilities */
+  --color-amp-slate:      var(--amp-slate);
+  --color-amp-purple:     var(--amp-purple);
+  --color-amp-purple-dark:var(--amp-purple-dark);
+  --color-amp-cyan:       var(--amp-cyan);
+  --color-amp-gray:       var(--amp-gray);
+
+  /* Font stack */
+  --font-sans:     var(--font-space-grotesk);
+  --font-body:     var(--font-inter);
+  --font-mono:     var(--font-jetbrains-mono);
+}
+
+body {
+  background: var(--amp-bg);
+  color: var(--amp-text);
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings use Space Grotesk */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-space-grotesk), "Arial Black", sans-serif;
+  color: var(--amp-slate);
+}
+
+code, kbd, pre, .font-mono {
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", "Courier New", monospace;
+}
