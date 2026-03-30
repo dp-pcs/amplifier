@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 interface UserSettings {
   substackHandle?: string;
   substackCookie?: string;
+  trilogyHandle?: string;
+  geminiApiKey?: string;
   linkedinHandle?: string;
 }
 
@@ -16,6 +18,8 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>({
     substackHandle: "",
     substackCookie: "",
+    trilogyHandle: "",
+    geminiApiKey: "",
     linkedinHandle: "",
   });
   const [loading, setLoading] = useState(true);
@@ -45,6 +49,8 @@ export default function SettingsPage() {
         setSettings({
           substackHandle: data.substackHandle || "",
           substackCookie: data.substackCookie || "",
+          trilogyHandle: data.trilogyHandle || "",
+          geminiApiKey: data.geminiApiKey || "",
           linkedinHandle: data.linkedinHandle || "",
         });
       }
@@ -156,6 +162,60 @@ export default function SettingsPage() {
                     <li>Go to Application tab → Cookies</li>
                     <li>Find and copy the value of &quot;connect.sid&quot;</li>
                   </ol>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="trilogyHandle"
+                  className="block text-sm font-medium text-white mb-2"
+                >
+                  Organization Substack Handle
+                </label>
+                <input
+                  type="text"
+                  id="trilogyHandle"
+                  value={settings.trilogyHandle}
+                  onChange={(e) =>
+                    setSettings({ ...settings, trilogyHandle: e.target.value })
+                  }
+                  placeholder="trilogyai"
+                  className="w-full px-4 py-2 bg-white/20 border border-white/30 rounded-lg text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+                <p className="mt-1 text-sm text-purple-200">
+                  Articles from this publication will be available in the article browser
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="geminiApiKey"
+                  className="block text-sm font-medium text-white mb-2"
+                >
+                  Gemini API Key
+                </label>
+                <input
+                  type="password"
+                  id="geminiApiKey"
+                  value={settings.geminiApiKey}
+                  onChange={(e) =>
+                    setSettings({ ...settings, geminiApiKey: e.target.value })
+                  }
+                  placeholder="AIza..."
+                  className="w-full px-4 py-2 bg-white/20 border border-white/30 rounded-lg text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+                <div className="mt-2 text-sm text-purple-200">
+                  <p>Get a free key at{" "}
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-white transition-colors"
+                    >
+                      aistudio.google.com →
+                    </a>
+                  </p>
+                  <p className="mt-1">Used for generating notes and infographics</p>
                 </div>
               </div>
 

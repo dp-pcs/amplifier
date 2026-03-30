@@ -9,6 +9,7 @@ interface SubstackPost {
   canonical_url: string;
   description?: string;
   cover_image?: string;
+  publishedBylines?: Array<{ name: string }>;
 }
 
 interface CleanedArticle {
@@ -19,6 +20,7 @@ interface CleanedArticle {
   url: string;
   description: string | null;
   coverImage: string | null;
+  authors?: string[];
 }
 
 export async function GET(request: NextRequest) {
@@ -72,6 +74,7 @@ export async function GET(request: NextRequest) {
       url: post.canonical_url,
       description: post.description || null,
       coverImage: post.cover_image || null,
+      authors: post.publishedBylines?.map(byline => byline.name) || [],
     }));
 
     return NextResponse.json({

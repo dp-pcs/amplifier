@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import { auth } from "@/auth";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -82,7 +83,7 @@ export default async function RootLayout({
         </header>
 
         {/* ── Main ────────────────────────────────────────────────────── */}
-        <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+        <main className="mx-auto max-w-6xl px-6 py-8"><Providers>{children}</Providers></main>
 
         {/* ── Footer ──────────────────────────────────────────────────── */}
         <footer style={{ borderTop: "1px solid #E2E8F0" }} className="mt-16">

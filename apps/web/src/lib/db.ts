@@ -11,6 +11,8 @@ export interface UserRecord {
   userId: string;
   substackCookie?: string;
   substackHandle?: string;
+  trilogyHandle?: string;
+  geminiApiKey?: string;
   linkedinHandle?: string;
   createdAt: string;
   updatedAt: string;
@@ -40,9 +42,6 @@ export interface Campaign {
 
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || "us-east-1",
-  ...(process.env.AWS_PROFILE && {
-    credentials: undefined, // Let SDK use profile from ~/.aws/credentials
-  }),
 });
 
 const docClient = DynamoDBDocumentClient.from(client);
@@ -79,6 +78,8 @@ export async function upsertUser(
       userId,
       substackCookie: data.substackCookie ?? existingUser?.substackCookie,
       substackHandle: data.substackHandle ?? existingUser?.substackHandle,
+      trilogyHandle: data.trilogyHandle ?? existingUser?.trilogyHandle,
+      geminiApiKey: data.geminiApiKey ?? existingUser?.geminiApiKey,
       linkedinHandle: data.linkedinHandle ?? existingUser?.linkedinHandle,
       createdAt: existingUser?.createdAt || now,
       updatedAt: now,

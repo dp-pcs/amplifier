@@ -11,36 +11,46 @@ interface Article {
   url: string;
   description: string | null;
   coverImage: string | null;
+  authors?: string[];
 }
 
 export default function ArticlesPage() {
   const router = useRouter();
   const [handle, setHandle] = useState("");
+  const [userHandle, setUserHandle] = useState("");
+  const [trilogyHandle, setTrilogyHandle] = useState("");
+  const [activePublication, setActivePublication] = useState<"user" | "trilogy">("user");
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [selectedAuthors, setSelectedAuthors] = useState<Set<string>>(new Set());
+  const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
 
-  // Load saved handle from settings on mount
+  // Load saved handles from settings on mount
   useEffect(() => {
-    async function loadSavedHandle() {
+    async function loadSavedHandles() {
       try {
         const response = await fetch("/api/settings");
         if (response.ok) {
           const data = await response.json();
           if (data.substackHandle) {
+            setUserHandle(data.substackHandle);
             setHandle(data.substackHandle);
+          }
+          if (data.trilogyHandle) {
+            setTrilogyHandle(data.trilogyHandle);
           }
         }
       } catch (err) {
-        console.error("Failed to load saved handle:", err);
+        console.error("Failed to load saved handles:", err);
       } finally {
         setInitialLoading(false);
       }
     }
-    loadSavedHandle();
+    loadSavedHandles();
   }, []);
 
   const fetchArticles = async (newOffset: number = 0, append: boolean = false) => {
@@ -68,6 +78,20 @@ export default function ArticlesPage() {
         setArticles((prev) => [...prev, ...data.articles]);
       } else {
         setArticles(data.articles);
+
+        // Extract unique authors for filtering (only for org publication)
+        if (trilogyHandle && handle === trilogyHandle) {
+          const authors = new Set<string>();
+          data.articles.forEach((article: Article) => {
+            article.authors?.forEach(author => authors.add(author));
+          });
+          const authorList = Array.from(authors).sort();
+          setAvailableAuthors(authorList);
+          setSelectedAuthors(new Set(authorList)); // All authors selected by default
+        } else {
+          setAvailableAuthors([]);
+          setSelectedAuthors(new Set());
+        }
       }
 
       setHasMore(data.articles.length === 20);
@@ -84,6 +108,46 @@ export default function ArticlesPage() {
     setOffset(0);
     fetchArticles(0, false);
   };
+
+  const switchToUserPublication = () => {
+    setActivePublication("user");
+    setHandle(userHandle);
+    setArticles([]);
+    setOffset(0);
+    setAvailableAuthors([]);
+    setSelectedAuthors(new Set());
+  };
+
+  const switchToTrilogyPublication = () => {
+    setActivePublication("trilogy");
+    setHandle(trilogyHandle);
+    setArticles([]);
+    setOffset(0);
+    setAvailableAuthors([]);
+    setSelectedAuthors(new Set());
+  };
+
+  const toggleAuthor = (author: string) => {
+    const newSelected = new Set(selectedAuthors);
+    if (newSelected.has(author)) {
+      newSelected.delete(author);
+    } else {
+      newSelected.add(author);
+    }
+    setSelectedAuthors(newSelected);
+  };
+
+  const filteredArticles = articles.filter(article => {
+    // If no author filter active or not viewing org publication, show all
+    if (!trilogyHandle || handle !== trilogyHandle || availableAuthors.length === 0) {
+      return true;
+    }
+    // Show articles by selected authors or articles with no author info
+    if (!article.authors || article.authors.length === 0) {
+      return true;
+    }
+    return article.authors.some(author => selectedAuthors.has(author));
+  });
 
   const handleLoadMore = () => {
     const newOffset = offset + 20;
@@ -125,6 +189,34 @@ export default function ArticlesPage() {
           </p>
         </div>
 
+        {/* Publication switcher pills (only show if trilogyHandle is set) */}
+        {trilogyHandle && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+            <div className="flex gap-2">
+              <button
+                onClick={switchToUserPublication}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activePublication === "user"
+                    ? "bg-purple-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                My Substack
+              </button>
+              <button
+                onClick={switchToTrilogyPublication}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activePublication === "trilogy"
+                    ? "bg-purple-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {trilogyHandle.charAt(0).toUpperCase() + trilogyHandle.slice(1)}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Search bar */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex gap-4">
@@ -143,6 +235,7 @@ export default function ArticlesPage() {
                 onKeyDown={(e) => e.key === "Enter" && handleBrowse()}
                 placeholder="e.g., trilogyai"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                disabled={trilogyHandle !== ""}
               />
             </div>
             <div className="flex items-end">
@@ -160,11 +253,31 @@ export default function ArticlesPage() {
           )}
         </div>
 
+        {/* Author filter (only show for org publication) */}
+        {trilogyHandle && handle === trilogyHandle && availableAuthors.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Filter by author:</h3>
+            <div className="flex flex-wrap gap-3">
+              {availableAuthors.map((author) => (
+                <label key={author} className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedAuthors.has(author)}
+                    onChange={() => toggleAuthor(author)}
+                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{author}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Articles grid */}
         {articles.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {articles.map((article) => (
+              {filteredArticles.map((article) => (
                 <div
                   key={article.id}
                   className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"

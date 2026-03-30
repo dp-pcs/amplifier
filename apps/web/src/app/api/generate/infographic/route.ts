@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
+import { getUser } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +11,11 @@ export async function POST(req: NextRequest) {
     }
 
     const { title, description, url } = await req.json();
+
+    // Fetch user to get their Gemini API key
+    const user = await getUser(session.user.email);
+    const apiKey = user?.geminiApiKey || process.env.GOOGLE_API_KEY || "";
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     if (!title) {
       return NextResponse.json(

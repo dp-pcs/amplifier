@@ -16,6 +16,8 @@ export async function GET() {
       return NextResponse.json({
         substackHandle: "",
         substackCookie: "",
+        trilogyHandle: "",
+        geminiApiKey: "",
         linkedinHandle: "",
       });
     }
@@ -25,9 +27,16 @@ export async function GET() {
       ? `${"*".repeat(Math.max(0, user.substackCookie.length - 8))}${user.substackCookie.slice(-8)}`
       : "";
 
+    // Mask the Gemini API key - only show last 8 characters
+    const maskedGeminiKey = user.geminiApiKey
+      ? `${"*".repeat(Math.max(0, user.geminiApiKey.length - 8))}${user.geminiApiKey.slice(-8)}`
+      : "";
+
     return NextResponse.json({
       substackHandle: user.substackHandle || "",
       substackCookie: maskedCookie,
+      trilogyHandle: user.trilogyHandle || "",
+      geminiApiKey: maskedGeminiKey,
       linkedinHandle: user.linkedinHandle || "",
     });
   } catch (error) {
@@ -48,12 +57,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { substackHandle, substackCookie, linkedinHandle } = body;
+    const { substackHandle, substackCookie, trilogyHandle, geminiApiKey, linkedinHandle } = body;
 
     // Prepare update data - only include fields that are provided
     const updateData: {
       substackHandle?: string;
       substackCookie?: string;
+      trilogyHandle?: string;
+      geminiApiKey?: string;
       linkedinHandle?: string;
     } = {};
 
@@ -64,6 +75,15 @@ export async function POST(request: NextRequest) {
     if (substackCookie !== undefined && !substackCookie.startsWith("*")) {
       // Only update cookie if it's not the masked value
       updateData.substackCookie = substackCookie;
+    }
+
+    if (trilogyHandle !== undefined) {
+      updateData.trilogyHandle = trilogyHandle;
+    }
+
+    if (geminiApiKey !== undefined && !geminiApiKey.startsWith("*")) {
+      // Only update API key if it's not the masked value
+      updateData.geminiApiKey = geminiApiKey;
     }
 
     if (linkedinHandle !== undefined) {

@@ -26,6 +26,8 @@ export default function GeneratePage() {
   const [activeTab, setActiveTab] = useState<TabType>("note");
   const [isOwnArticle, setIsOwnArticle] = useState(false);
   const [userHandle, setUserHandle] = useState<string | null>(null);
+  const [trilogyHandle, setTrilogyHandle] = useState<string | null>(null);
+  const [postToTrilogy, setPostToTrilogy] = useState(false);
 
   // Generation states
   const [noteContent, setNoteContent] = useState("");
@@ -44,12 +46,15 @@ export default function GeneratePage() {
   const articleId = params.id as string;
 
   useEffect(() => {
-    // Fetch user settings to get their Substack handle
+    // Fetch user settings to get their Substack handle and org handle
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
         if (data.substackHandle) {
           setUserHandle(data.substackHandle);
+        }
+        if (data.trilogyHandle) {
+          setTrilogyHandle(data.trilogyHandle);
         }
       })
       .catch((err) => console.error("Failed to fetch user settings:", err));
@@ -184,10 +189,14 @@ export default function GeneratePage() {
     setError(null);
 
     try {
+      const targetHandle = postToTrilogy && trilogyHandle ? trilogyHandle : undefined;
       const response = await fetch("/api/substack/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: noteContent }),
+        body: JSON.stringify({
+          content: noteContent,
+          targetHandle
+        }),
       });
 
       if (!response.ok) {
@@ -195,7 +204,10 @@ export default function GeneratePage() {
         throw new Error(error.error || "Failed to post to Substack");
       }
 
-      alert("Successfully posted to Substack!");
+      const publicationName = postToTrilogy && trilogyHandle
+        ? trilogyHandle.charAt(0).toUpperCase() + trilogyHandle.slice(1)
+        : "your Substack";
+      alert(`Successfully posted to ${publicationName}!`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to post to Substack"
@@ -501,6 +513,23 @@ export default function GeneratePage() {
                         <div className="mt-2 text-xs text-gray-500">
                           {noteContent.length} / 280 characters
                         </div>
+
+                        {/* Post to Trilogy AI checkbox */}
+                        {trilogyHandle && article?.handle === trilogyHandle && (
+                          <div className="mt-4">
+                            <label className="flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={postToTrilogy}
+                                onChange={(e) => setPostToTrilogy(e.target.checked)}
+                                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                              />
+                              <span className="ml-2 text-sm text-gray-700">
+                                Post notes to {trilogyHandle.charAt(0).toUpperCase() + trilogyHandle.slice(1)} Substack instead of my personal Substack
+                              </span>
+                            </label>
+                          </div>
+                        )}
 
                         <div className="mt-4 flex flex-wrap gap-3">
                           <button
