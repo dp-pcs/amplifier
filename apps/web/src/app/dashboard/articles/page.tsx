@@ -92,7 +92,8 @@ export default function ArticlesPage() {
 
   const handleSelectArticle = (article: Article) => {
     // Cache article data in sessionStorage for the detail page
-    sessionStorage.setItem(`article_${article.id}`, JSON.stringify(article));
+    const articleWithHandle = { ...article, handle };
+    sessionStorage.setItem(`article_${article.id}`, JSON.stringify(articleWithHandle));
     router.push(`/dashboard/articles/${article.id}/generate`);
   };
 
