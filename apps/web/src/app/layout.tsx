@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { auth } from "@/auth";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -26,11 +27,14 @@ export const metadata: Metadata = {
   description: "Transform your Substack content into LinkedIn engagement. Amplify your reach.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  const user = session?.user;
+
   return (
     <html lang="en">
       <body className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
@@ -47,10 +51,32 @@ export default function RootLayout({
             </Link>
 
             <div className="flex items-center gap-6">
-              <nav className="flex gap-6 text-sm font-medium" style={{ color: "#64748B" }}>
-                <Link href="/dashboard" className="transition-colors hover:text-slate-900">Dashboard</Link>
-                <Link href="/login" className="transition-colors hover:text-slate-900">Sign In</Link>
-              </nav>
+              {user && (
+                <nav className="flex gap-6 text-sm font-medium" style={{ color: "#64748B" }}>
+                  <Link href="/dashboard" className="transition-colors hover:text-slate-900">Dashboard</Link>
+                </nav>
+              )}
+
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs" style={{ color: "#94A3B8" }}>{user.email}</span>
+                  <Link
+                    href="/api/auth/signout"
+                    className="rounded border px-3 py-1 text-xs font-medium transition-colors"
+                    style={{ borderColor: "#E2E8F0", color: "#1E293B" }}
+                  >
+                    Sign Out
+                  </Link>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="rounded px-4 py-1.5 text-sm font-semibold text-white transition-colors"
+                  style={{ background: "#8B5CF6" }}
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </div>
         </header>

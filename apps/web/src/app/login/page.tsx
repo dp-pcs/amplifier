@@ -1,51 +1,48 @@
-export default function Login() {
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+
+export default async function Login() {
+  const session = await auth();
+
+  // Redirect logged-in users to dashboard
+  if (session?.user) {
+    redirect("/dashboard");
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <div className="w-full max-w-md p-8 rounded-lg border" style={{ borderColor: "#E2E8F0" }}>
-        <h1 className="text-3xl font-bold mb-2 text-center" style={{ color: "#0F1117" }}>
-          Sign In
+    <section className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 text-center">
+      <div className="space-y-4">
+        <div className="flex items-center justify-center mb-2">
+          <div className="h-16 w-16 rounded-full flex items-center justify-center" style={{ background: "#8B5CF6" }}>
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+        </div>
+
+        <h1 className="text-4xl font-bold" style={{ color: "#0F1117" }}>
+          Welcome to Amplifier
         </h1>
 
-        <p className="text-center mb-8" style={{ color: "#64748B" }}>
-          Authentication coming soon
+        <p className="max-w-lg" style={{ color: "#64748B" }}>
+          Transform your Substack content into engaging LinkedIn posts with AI.
+          Sign in with your Trilogy account to continue.
         </p>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: "#1E293B" }}>
-              Email
-            </label>
-            <input
-              type="email"
-              disabled
-              placeholder="your@email.com"
-              className="w-full px-4 py-2 rounded border"
-              style={{ borderColor: "#E2E8F0", background: "#F8FAFC" }}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: "#1E293B" }}>
-              Password
-            </label>
-            <input
-              type="password"
-              disabled
-              placeholder="••••••••"
-              className="w-full px-4 py-2 rounded border"
-              style={{ borderColor: "#E2E8F0", background: "#F8FAFC" }}
-            />
-          </div>
-
-          <button
-            disabled
-            className="w-full rounded-lg px-6 py-3 text-base font-semibold text-white transition-colors opacity-50 cursor-not-allowed"
-            style={{ background: "#8B5CF6" }}
-          >
-            Sign In (Coming Soon)
-          </button>
-        </div>
       </div>
-    </div>
+
+      <Link
+        href="/api/auth/signin"
+        className="rounded-lg px-8 py-3 text-base font-semibold text-white transition-colors hover:opacity-90"
+        style={{ background: "#8B5CF6" }}
+      >
+        Sign in with Google
+      </Link>
+
+      <p className="text-xs max-w-md" style={{ color: "#94A3B8" }}>
+        Access is restricted to @trilogy.com email addresses.
+        If you need access with a different email, contact your administrator.
+      </p>
+    </section>
   );
 }

@@ -20,6 +20,7 @@ Amplifier is a web application that helps content creators expand their reach by
 - **React 19** - UI library
 - **TypeScript** - Type safety
 - **Tailwind CSS 4** - Styling
+- **NextAuth.js 5** - Authentication
 - **Google Fonts** - Space Grotesk, Inter, JetBrains Mono
 
 ### Infrastructure
@@ -49,12 +50,30 @@ Amplifier is a web application that helps content creators expand their reach by
    npm install
    ```
 
-2. Run development server:
+2. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Then edit `.env` with your credentials:
+   - **Google OAuth**: Create a new project at [Google Cloud Console](https://console.cloud.google.com/)
+     - Project name: `amplifier-portal`
+     - Navigate to APIs & Services → Credentials
+     - Create OAuth 2.0 Client ID (Web application)
+     - Add authorized redirect URI: `https://amplify.elelem.expert/api/auth/callback/google`
+     - For local development, also add: `http://localhost:3000/api/auth/callback/google`
+     - Copy the Client ID and Client Secret to your `.env`
+   - **NEXTAUTH_SECRET**: Generate with `openssl rand -base64 32`
+   - **NEXTAUTH_URL**: `http://localhost:3000` for local dev, `https://amplify.elelem.expert` for production
+   - **ALLOWED_EMAIL_DOMAINS**: `trilogy.com` (or your organization's domain)
+   - **ALLOWED_EMAILS**: Add specific email addresses if needed (e.g., `david.proctor@trilogy.com`)
+
+3. Run development server:
    ```bash
    npm run dev
    ```
 
-3. Open [http://localhost:3000](http://localhost:3000)
+4. Open [http://localhost:3000](http://localhost:3000)
 
 ### Available Scripts
 
@@ -70,14 +89,18 @@ amplifier/
 ├── apps/
 │   └── web/                 # Next.js web application
 │       ├── src/
-│       │   └── app/        # App Router pages
-│       │       ├── page.tsx           # Landing page
-│       │       ├── dashboard/         # Dashboard (stub)
-│       │       ├── login/             # Login (stub)
-│       │       ├── layout.tsx         # Root layout
-│       │       └── globals.css        # Global styles
+│       │   ├── app/        # App Router pages
+│       │   │   ├── api/auth/[...nextauth]/ # NextAuth routes
+│       │   │   ├── page.tsx           # Landing page
+│       │   │   ├── dashboard/         # Protected dashboard
+│       │   │   ├── login/             # Login page (Google OAuth)
+│       │   │   ├── layout.tsx         # Root layout
+│       │   │   └── globals.css        # Global styles
+│       │   └── auth.ts     # NextAuth configuration
 │       ├── public/          # Static assets
+│       ├── middleware.ts    # Route protection middleware
 │       ├── Dockerfile       # Production container
+│       ├── .env.example     # Environment variables template
 │       ├── package.json
 │       └── tsconfig.json
 └── infra/
@@ -106,13 +129,25 @@ docker build --platform linux/amd64 -t amplifier-web .
 - ECR repository
 - DynamoDB tables
 
+### Authentication
+The application uses NextAuth.js 5 with Google OAuth for authentication:
+- Only @trilogy.com email addresses are allowed by default
+- Additional individual emails can be allowlisted via `ALLOWED_EMAILS` environment variable
+- Protected routes (e.g., `/dashboard`) require authentication
+- Middleware automatically redirects unauthenticated users to `/login`
+
 ## Roadmap
 
 - [x] Scaffold Next.js app
 - [x] Basic UI with landing, dashboard, and login stubs
 - [x] Dockerfile for ECS deployment
 - [x] DNS record setup
-- [ ] Authentication (Google OAuth + NextAuth)
+- [x] Authentication (Google OAuth + NextAuth)
+  - [x] NextAuth.js 5 integration
+  - [x] Google OAuth provider
+  - [x] Domain allowlist (@trilogy.com)
+  - [x] Protected routes with middleware
+  - [x] Sign in/sign out flow
 - [ ] AWS infrastructure provisioning
 - [ ] Substack integration
 - [ ] LinkedIn API integration
