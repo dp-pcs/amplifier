@@ -43,6 +43,9 @@ export default function GeneratePage() {
   const [saving, setSaving] = useState(false);
   const [savedCampaignId, setSavedCampaignId] = useState<string | null>(null);
   const [needsAiKey, setNeedsAiKey] = useState(false);
+  const [alsLinks, setAlsLinks] = useState<{ linkedin: string; email: string } | null>(null);
+  const [alsLoading, setAlsLoading] = useState(false);
+  const [copiedAlsLink, setCopiedAlsLink] = useState<string | null>(null);
 
   const articleId = params.id as string;
 
@@ -111,6 +114,28 @@ export default function GeneratePage() {
       month: "long",
       day: "numeric",
     });
+  };
+
+  // Fetch als links when article is loaded
+  useEffect(() => {
+    if (article?.url && !alsLinks && !alsLoading) {
+      setAlsLoading(true);
+      fetch(`/api/als?url=${encodeURIComponent(article.url)}`)
+        .then(res => res.json())
+        .then(links => setAlsLinks(links))
+        .catch(err => console.error("Failed to fetch als links:", err))
+        .finally(() => setAlsLoading(false));
+    }
+  }, [article]);
+
+  const copyAlsLink = async (text: string, linkId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedAlsLink(linkId);
+      setTimeout(() => setCopiedAlsLink(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
   };
 
   const handleGenerate = async () => {
@@ -410,6 +435,57 @@ export default function GeneratePage() {
                     />
                   </svg>
                 </a>
+
+                {/* ALS Tracking Links */}
+                {hasGeneratedContent && (
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Share this article:</h3>
+                    {alsLoading ? (
+                      <div className="text-xs text-gray-400">Loading tracking links...</div>
+                    ) : alsLinks ? (
+                      <div className="space-y-2">
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">LinkedIn:</div>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={alsLinks.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[#2563EB] hover:underline truncate flex-1 font-mono"
+                            >
+                              {alsLinks.linkedin}
+                            </a>
+                            <button
+                              onClick={() => copyAlsLink(alsLinks.linkedin, "linkedin")}
+                              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded"
+                            >
+                              {copiedAlsLink === "linkedin" ? "✓" : "Copy"}
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">Email:</div>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={alsLinks.email}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[#2563EB] hover:underline truncate flex-1 font-mono"
+                            >
+                              {alsLinks.email}
+                            </a>
+                            <button
+                              onClick={() => copyAlsLink(alsLinks.email, "email")}
+                              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded"
+                            >
+                              {copiedAlsLink === "email" ? "✓" : "Copy"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
 
                 {/* Is this your article toggle */}
                 <div className="mt-6 pt-6 border-t border-gray-200">

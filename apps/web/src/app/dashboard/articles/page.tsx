@@ -14,6 +14,11 @@ interface Article {
   authors?: string[];
 }
 
+interface AlsLinks {
+  linkedin: string;
+  email: string;
+}
+
 export default function ArticlesPage() {
   const router = useRouter();
   const [handle, setHandle] = useState("");
@@ -28,6 +33,9 @@ export default function ArticlesPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [selectedAuthors, setSelectedAuthors] = useState<Set<string>>(new Set());
   const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
+  const [alsLinks, setAlsLinks] = useState<Map<string, AlsLinks>>(new Map());
+  const [alsLoading, setAlsLoading] = useState<Set<string>>(new Set());
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   // Load saved handles from settings on mount
   useEffect(() => {
@@ -167,6 +175,51 @@ export default function ArticlesPage() {
       month: "long",
       day: "numeric",
     });
+  };
+
+  // Fetch als links for an article
+  const fetchAlsLinks = async (articleUrl: string) => {
+    // Skip if already loaded or loading
+    if (alsLinks.has(articleUrl) || alsLoading.has(articleUrl)) {
+      return;
+    }
+
+    setAlsLoading(prev => new Set(prev).add(articleUrl));
+
+    try {
+      const response = await fetch(`/api/als?url=${encodeURIComponent(articleUrl)}`);
+      if (response.ok) {
+        const links = await response.json();
+        setAlsLinks(prev => new Map(prev).set(articleUrl, links));
+      }
+    } catch (error) {
+      console.error("Failed to fetch als links:", error);
+    } finally {
+      setAlsLoading(prev => {
+        const next = new Set(prev);
+        next.delete(articleUrl);
+        return next;
+      });
+    }
+  };
+
+  // Fetch als links for all visible articles after they load
+  useEffect(() => {
+    if (articles.length > 0) {
+      filteredArticles.forEach(article => {
+        fetchAlsLinks(article.url);
+      });
+    }
+  }, [articles]);
+
+  const copyToClipboard = async (text: string, linkId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedLink(linkId);
+      setTimeout(() => setCopiedLink(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
   };
 
   if (initialLoading) {
@@ -311,6 +364,50 @@ export default function ArticlesPage() {
                     >
                       Select
                     </button>
+
+                    {/* ALS Tracking Links */}
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      {alsLoading.has(article.url) ? (
+                        <div className="text-xs text-gray-400">Loading tracking links...</div>
+                      ) : alsLinks.has(article.url) ? (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">🔗 LinkedIn:</span>
+                            <a
+                              href={alsLinks.get(article.url)!.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[#2563EB] hover:underline truncate flex-1"
+                            >
+                              {alsLinks.get(article.url)!.linkedin.replace('https://', '')}
+                            </a>
+                            <button
+                              onClick={() => copyToClipboard(alsLinks.get(article.url)!.linkedin, `${article.id}-linkedin`)}
+                              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-0.5"
+                            >
+                              {copiedLink === `${article.id}-linkedin` ? "✓" : "Copy"}
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">📧 Email:</span>
+                            <a
+                              href={alsLinks.get(article.url)!.email}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[#2563EB] hover:underline truncate flex-1 ml-4"
+                            >
+                              {alsLinks.get(article.url)!.email.replace('https://', '')}
+                            </a>
+                            <button
+                              onClick={() => copyToClipboard(alsLinks.get(article.url)!.email, `${article.id}-email`)}
+                              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-0.5"
+                            >
+                              {copiedLink === `${article.id}-email` ? "✓" : "Copy"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               ))}

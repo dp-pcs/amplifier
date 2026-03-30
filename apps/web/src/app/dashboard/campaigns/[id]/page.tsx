@@ -15,10 +15,25 @@ export default function CampaignDetailPage() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
   const [posting, setPosting] = useState<string | null>(null);
+  const [alsLinks, setAlsLinks] = useState<{ linkedin: string; email: string } | null>(null);
+  const [alsLoading, setAlsLoading] = useState(false);
+  const [copiedAlsLink, setCopiedAlsLink] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCampaign();
   }, [campaignId]);
+
+  // Fetch als links when campaign is loaded
+  useEffect(() => {
+    if (campaign?.articleUrl && !alsLinks && !alsLoading) {
+      setAlsLoading(true);
+      fetch(`/api/als?url=${encodeURIComponent(campaign.articleUrl)}`)
+        .then(res => res.json())
+        .then(links => setAlsLinks(links))
+        .catch(err => console.error("Failed to fetch als links:", err))
+        .finally(() => setAlsLoading(false));
+    }
+  }, [campaign]);
 
   const fetchCampaign = async () => {
     try {
@@ -108,6 +123,16 @@ export default function CampaignDetailPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const copyAlsLink = async (text: string, linkId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedAlsLink(linkId);
+      setTimeout(() => setCopiedAlsLink(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -351,7 +376,7 @@ export default function CampaignDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             {campaign.articleTitle}
           </h1>
-          <div className="flex items-center gap-3 text-sm text-gray-600">
+          <div className="flex items-center gap-3 text-sm text-gray-600 mb-4">
             <span className="font-medium">{campaign.articleHandle}</span>
             <span>•</span>
             <span>Created {formatDate(campaign.createdAt)}</span>
@@ -377,6 +402,55 @@ export default function CampaignDetailPage() {
                 />
               </svg>
             </a>
+          </div>
+
+          {/* ALS Tracking Links */}
+          <div className="pt-4 border-t border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Share this article:</h3>
+            {alsLoading ? (
+              <div className="text-xs text-gray-400">Loading tracking links...</div>
+            ) : alsLinks ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1.5">LinkedIn:</div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={alsLinks.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#2563EB] hover:underline truncate flex-1 font-mono"
+                    >
+                      {alsLinks.linkedin}
+                    </a>
+                    <button
+                      onClick={() => copyAlsLink(alsLinks.linkedin, "linkedin")}
+                      className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded shrink-0"
+                    >
+                      {copiedAlsLink === "linkedin" ? "✓" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1.5">Email:</div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={alsLinks.email}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#2563EB] hover:underline truncate flex-1 font-mono"
+                    >
+                      {alsLinks.email}
+                    </a>
+                    <button
+                      onClick={() => copyAlsLink(alsLinks.email, "email")}
+                      className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded shrink-0"
+                    >
+                      {copiedAlsLink === "email" ? "✓" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
