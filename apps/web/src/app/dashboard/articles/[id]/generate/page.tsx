@@ -38,6 +38,8 @@ export default function GeneratePage() {
   const [generating, setGenerating] = useState(false);
   const [posting, setPosting] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedCampaignId, setSavedCampaignId] = useState<string | null>(null);
 
   const articleId = params.id as string;
 
@@ -230,6 +232,85 @@ export default function GeneratePage() {
     handleGenerate();
   };
 
+  const handleSaveCampaign = async () => {
+    if (!article) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const assets: any[] = [];
+
+      if (noteContent) {
+        assets.push({
+          id: crypto.randomUUID(),
+          type: "note",
+          content: noteContent,
+          status: "draft",
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      if (linkedinContent) {
+        assets.push({
+          id: crypto.randomUUID(),
+          type: "linkedin",
+          content: linkedinContent,
+          status: "draft",
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      if (infographicData) {
+        assets.push({
+          id: crypto.randomUUID(),
+          type: "infographic",
+          content: infographicData.image,
+          status: "draft",
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      if (assets.length === 0) {
+        setError("Generate some content before saving the campaign");
+        return;
+      }
+
+      const response = await fetch("/api/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          articleUrl: article.url,
+          articleTitle: article.title,
+          articleHandle: article.handle || "unknown",
+          isOwnArticle,
+          assets,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save campaign");
+      }
+
+      const campaign = await response.json();
+      setSavedCampaignId(campaign.campaignId);
+
+      // Redirect to campaigns page after a brief delay
+      setTimeout(() => {
+        router.push("/dashboard/campaigns");
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save campaign");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const hasGeneratedContent = Boolean(
+    noteContent || linkedinContent || infographicData
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -385,6 +466,14 @@ export default function GeneratePage() {
                 {error && (
                   <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
                     <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                )}
+
+                {savedCampaignId && (
+                  <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-800">
+                      Campaign saved! Redirecting to campaigns...
+                    </p>
                   </div>
                 )}
 
@@ -627,6 +716,45 @@ export default function GeneratePage() {
                   </div>
                 )}
               </div>
+
+              {/* Save to Campaign button */}
+              {hasGeneratedContent && !savedCampaignId && (
+                <div className="px-6 pb-6">
+                  <button
+                    onClick={handleSaveCampaign}
+                    disabled={saving}
+                    className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  >
+                    {saving ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Saving Campaign...
+                      </>
+                    ) : (
+                      "Save to Campaign"
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,11 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth, signIn } from "@/auth";
 
 export default async function Login() {
   const session = await auth();
 
-  // Redirect logged-in users to dashboard
   if (session?.user) {
     redirect("/dashboard");
   }
@@ -31,13 +29,18 @@ export default async function Login() {
         </p>
       </div>
 
-      <Link
-        href="/api/auth/signin"
-        className="rounded-lg px-8 py-3 text-base font-semibold text-white transition-colors hover:opacity-90"
-        style={{ background: "#8B5CF6" }}
-      >
-        Sign in with Google
-      </Link>
+      <form action={async () => {
+        "use server";
+        await signIn("google", { redirectTo: "/dashboard" });
+      }}>
+        <button
+          type="submit"
+          className="rounded-lg px-8 py-3 text-base font-semibold text-white transition-colors hover:opacity-90 cursor-pointer"
+          style={{ background: "#8B5CF6" }}
+        >
+          Sign in with Google
+        </button>
+      </form>
 
       <p className="text-xs max-w-md" style={{ color: "#94A3B8" }}>
         Access is restricted to @trilogy.com email addresses.
