@@ -205,7 +205,7 @@ export default function PublishPage() {
       <div className="max-w-4xl mx-auto py-8 px-4">
         <div
           className="p-6 rounded-lg border-l-4 mb-6"
-          style={{ borderColor: "#F59E0B", background: "#FEF3C7" }}
+          style={{ borderColor: "#D97706", background: "#FEF3C7" }}
         >
           <h2 className="text-lg font-semibold mb-2" style={{ color: "#92400E" }}>
             Substack Cookie Required
@@ -217,7 +217,7 @@ export default function PublishPage() {
           <button
             onClick={() => router.push("/dashboard/settings")}
             className="mt-4 px-4 py-2 rounded-lg font-semibold text-white"
-            style={{ background: "#F59E0B" }}
+            style={{ background: "#D97706" }}
           >
             Go to Settings
           </button>
@@ -327,7 +327,7 @@ export default function PublishPage() {
                 onClick={handlePublish}
                 disabled={publishing || !title || !markdown}
                 className="w-full px-6 py-3 rounded-lg font-semibold text-white disabled:opacity-50"
-                style={{ background: "#8B5CF6" }}
+                style={{ background: "#2563EB" }}
               >
                 {publishing
                   ? "Publishing..."
@@ -411,7 +411,7 @@ export default function PublishPage() {
                 </p>
               ) : amplifying ? (
                 <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563EB] mb-4"></div>
                   <p style={{ color: "#64748B" }}>
                     Generating notes and infographics...
                   </p>
@@ -431,8 +431,8 @@ export default function PublishPage() {
                             <span
                               className="text-xs font-semibold px-2 py-1 rounded"
                               style={{
-                                background: "#DDD6FE",
-                                color: "#5B21B6",
+                                background: "#EFF6FF",
+                                color: "#1E40AF",
                               }}
                             >
                               Note
@@ -498,7 +498,7 @@ export default function PublishPage() {
                   <button
                     onClick={handleSaveCampaign}
                     className="w-full px-6 py-3 rounded-lg font-semibold text-white"
-                    style={{ background: "#10B981" }}
+                    style={{ background: "#16A34A" }}
                   >
                     Save Campaign
                   </button>

@@ -115,7 +115,7 @@ export default function CampaignsPage() {
             <div className="mt-6">
               <button
                 onClick={() => router.push("/dashboard/articles")}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
               >
                 Browse Articles
               </button>
@@ -151,7 +151,7 @@ export default function CampaignsPage() {
                   {/* Asset counts */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {assetCounts.note > 0 && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EFF6FF] text-[#1E40AF]">
                         {assetCounts.note} Note{assetCounts.note > 1 ? "s" : ""}
                       </span>
                     )}
@@ -191,7 +191,7 @@ export default function CampaignsPage() {
                   </div>
 
                   {/* View campaign link */}
-                  <div className="flex items-center text-sm text-purple-600 font-medium">
+                  <div className="flex items-center text-sm text-[#2563EB] font-medium">
                     View campaign
                     <svg
                       className="w-4 h-4 ml-1"

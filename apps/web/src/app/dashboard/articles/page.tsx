@@ -197,7 +197,7 @@ export default function ArticlesPage() {
                 onClick={switchToUserPublication}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   activePublication === "user"
-                    ? "bg-purple-600 text-white"
+                    ? "bg-[#2563EB] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -207,7 +207,7 @@ export default function ArticlesPage() {
                 onClick={switchToTrilogyPublication}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   activePublication === "trilogy"
-                    ? "bg-purple-600 text-white"
+                    ? "bg-[#2563EB] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -234,7 +234,7 @@ export default function ArticlesPage() {
                 onChange={(e) => setHandle(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleBrowse()}
                 placeholder="e.g., trilogyai"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 disabled={trilogyHandle !== ""}
               />
             </div>
@@ -242,7 +242,7 @@ export default function ArticlesPage() {
               <button
                 onClick={handleBrowse}
                 disabled={loading || !handle.trim()}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 {loading && !articles.length ? "Loading..." : "Browse"}
               </button>
@@ -264,7 +264,7 @@ export default function ArticlesPage() {
                     type="checkbox"
                     checked={selectedAuthors.has(author)}
                     onChange={() => toggleAuthor(author)}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    className="w-4 h-4 text-[#2563EB] border-gray-300 rounded focus:ring-[#2563EB]"
                   />
                   <span className="ml-2 text-sm text-gray-700">{author}</span>
                 </label>
@@ -307,7 +307,7 @@ export default function ArticlesPage() {
                     </p>
                     <button
                       onClick={() => handleSelectArticle(article)}
-                      className="w-full px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                      className="w-full px-4 py-2 bg-[#2563EB] text-white text-sm font-medium rounded-lg hover:bg-[#1D4ED8] transition-colors"
                     >
                       Select
                     </button>

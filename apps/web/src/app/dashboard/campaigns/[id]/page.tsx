@@ -130,7 +130,7 @@ export default function CampaignDetailPage() {
 
     const cardClasses = `border rounded-lg p-4 transition-all ${
       isDraft
-        ? "bg-white border-purple-300"
+        ? "bg-white border-[#93C5FD]"
         : isPosted
           ? "bg-green-50 border-green-300"
           : "bg-gray-50 border-gray-300 opacity-60"
@@ -184,7 +184,7 @@ export default function CampaignDetailPage() {
               </span>
             )}
             {isDraft && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EFF6FF] text-[#1E40AF]">
                 Draft
               </span>
             )}
@@ -213,7 +213,7 @@ export default function CampaignDetailPage() {
                   <button
                     onClick={() => handlePostToSubstack(asset.content, asset.id)}
                     disabled={posting === asset.id || updating === asset.id}
-                    className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm bg-[#2563EB] text-white rounded hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
                   >
                     {posting === asset.id ? "Posting..." : "Post to Substack"}
                   </button>
@@ -236,7 +236,7 @@ export default function CampaignDetailPage() {
                 <button
                   onClick={() => handleDownloadInfographic(asset.content, asset.id)}
                   disabled={updating === asset.id}
-                  className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:opacity-50"
+                  className="px-3 py-1.5 text-sm bg-[#2563EB] text-white rounded hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
                 >
                   Download
                 </button>
@@ -360,7 +360,7 @@ export default function CampaignDetailPage() {
               href={campaign.articleUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-purple-600 hover:text-purple-700 flex items-center"
+              className="text-[#2563EB] hover:text-[#1D4ED8] flex items-center"
             >
               View article
               <svg

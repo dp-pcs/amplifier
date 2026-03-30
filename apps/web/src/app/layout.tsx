@@ -46,7 +46,7 @@ export default async function RootLayout({
 
             {/* Logo */}
             <Link href="/" className="flex items-center">
-              <div className="text-2xl font-bold" style={{ color: "#8B5CF6" }}>
+              <div className="text-2xl font-bold" style={{ color: "#2563EB" }}>
                 Amplifier
               </div>
             </Link>
@@ -72,8 +72,8 @@ export default async function RootLayout({
               ) : (
                 <Link
                   href="/login"
-                  className="rounded px-4 py-1.5 text-sm font-semibold text-white transition-colors"
-                  style={{ background: "#8B5CF6" }}
+                  className="rounded px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90"
+                  style={{ background: "#2563EB" }}
                 >
                   Sign In
                 </Link>

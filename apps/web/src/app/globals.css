@@ -1,30 +1,45 @@
 @import "tailwindcss";
 
-/* ── Amplifier Brand Tokens ─────────────────────────────────────── */
+/* ── Amplifier Design Tokens — Clean Professional Theme ─────────── */
 :root {
-  --amp-bg:         #FFFFFF;   /* Primary background — white          */
-  --amp-bg-subtle:  #F8FAFC;   /* Subtle background — panels/cards    */
-  --amp-border:     #E2E8F0;   /* Borders / dividers                  */
-  --amp-slate:      #0F1117;   /* Deep Slate — headings               */
-  --amp-purple:     #8B5CF6;   /* Purple — action / brand             */
-  --amp-purple-dark:#7C3AED;   /* Purple hover state                  */
-  --amp-cyan:       #06B6D4;   /* Cyan — accents                      */
-  --amp-text:       #1E293B;   /* Primary text                        */
-  --amp-muted:      #64748B;   /* Muted / secondary text              */
-  --amp-gray:       #E5E7EB;   /* Dividers                            */
-  --amp-white:      #FFFFFF;
+  --amp-bg:           #F8FAFC;   /* Page background — light slate       */
+  --amp-surface:      #FFFFFF;   /* Cards, inputs — white               */
+  --amp-border:       #E2E8F0;   /* All borders                         */
+  --amp-border-hover: #CBD5E1;   /* Border hover state                  */
+  --amp-text:         #0F172A;   /* Primary text                        */
+  --amp-text-sec:     #475569;   /* Secondary text                      */
+  --amp-text-muted:   #94A3B8;   /* Muted text                          */
+  --amp-accent:       #2563EB;   /* Primary blue accent                 */
+  --amp-accent-hover: #1D4ED8;   /* Accent hover state                  */
+  --amp-accent-light: #EFF6FF;   /* Light blue background               */
+  --amp-success:      #16A34A;   /* Success green                       */
+  --amp-success-light:#F0FDF4;   /* Success light background            */
+  --amp-warning:      #D97706;   /* Warning amber                       */
+  --amp-warning-light:#FFFBEB;   /* Warning light background            */
+  --amp-danger:       #DC2626;   /* Danger red                          */
+  --amp-danger-light: #FEF2F2;   /* Danger light background             */
 }
 
 @theme inline {
   --color-background: var(--amp-bg);
-  --color-foreground:  var(--amp-text);
+  --color-foreground: var(--amp-text);
 
-  /* Brand palette as Tailwind utilities */
-  --color-amp-slate:      var(--amp-slate);
-  --color-amp-purple:     var(--amp-purple);
-  --color-amp-purple-dark:var(--amp-purple-dark);
-  --color-amp-cyan:       var(--amp-cyan);
-  --color-amp-gray:       var(--amp-gray);
+  /* Semantic color palette */
+  --color-amp-surface:      var(--amp-surface);
+  --color-amp-border:       var(--amp-border);
+  --color-amp-border-hover: var(--amp-border-hover);
+  --color-amp-text:         var(--amp-text);
+  --color-amp-text-sec:     var(--amp-text-sec);
+  --color-amp-text-muted:   var(--amp-text-muted);
+  --color-amp-accent:       var(--amp-accent);
+  --color-amp-accent-hover: var(--amp-accent-hover);
+  --color-amp-accent-light: var(--amp-accent-light);
+  --color-amp-success:      var(--amp-success);
+  --color-amp-success-light:var(--amp-success-light);
+  --color-amp-warning:      var(--amp-warning);
+  --color-amp-warning-light:var(--amp-warning-light);
+  --color-amp-danger:       var(--amp-danger);
+  --color-amp-danger-light: var(--amp-danger-light);
 
   /* Font stack */
   --font-sans:     var(--font-space-grotesk);
@@ -42,7 +57,7 @@ body {
 /* Headings use Space Grotesk */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-space-grotesk), "Arial Black", sans-serif;
-  color: var(--amp-slate);
+  color: var(--amp-text);
 }
 
 code, kbd, pre, .font-mono {
