@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getUser } from "@/lib/db";
+import { generateText } from "@/lib/ai-client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,11 +12,6 @@ export async function POST(req: NextRequest) {
 
     const { title, subtitle, url, description, isOwnArticle } = await req.json();
 
-    // Fetch user to get their Gemini API key
-    const user = await getUser(session.user.email);
-    const apiKey = user?.geminiApiKey || process.env.GOOGLE_API_KEY || "";
-    const genAI = new GoogleGenerativeAI(apiKey);
-
     if (!title || !url) {
       return NextResponse.json(
         { error: "title and url are required" },
@@ -24,9 +19,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || "gemini-2.0-flash-exp",
-    });
+    // Fetch user to get their AI settings
+    const user = await getUser(session.user.email);
+
+    if (!user?.aiApiKey || !user?.aiBaseUrl || !user?.aiModel) {
+      return NextResponse.json(
+        {
+          error: "ai_key_required",
+          message: "Add your AI provider key in Settings to generate notes and posts"
+        },
+        { status: 402 }
+      );
+    }
 
     const perspective = isOwnArticle ? "first person" : "third person";
 
@@ -64,8 +68,13 @@ Format:
 
 Return ONLY the LinkedIn post. No extra commentary.`;
 
-    const result = await model.generateContent(prompt);
-    const post = result.response.text().trim();
+    const systemPrompt = "You are a helpful assistant that generates engaging LinkedIn posts.";
+
+    const post = await generateText(prompt, systemPrompt, {
+      baseUrl: user.aiBaseUrl,
+      apiKey: user.aiApiKey,
+      model: user.aiModel,
+    });
 
     return NextResponse.json({ post });
   } catch (error) {

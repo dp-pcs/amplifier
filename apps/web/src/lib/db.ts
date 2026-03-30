@@ -12,7 +12,10 @@ export interface UserRecord {
   substackCookie?: string;
   substackHandle?: string;
   trilogyHandle?: string;
-  geminiApiKey?: string;
+  aiProvider?: string; // "gemini" | "claude" | "openai" | "groq" | "kimi" | "deepseek" | "custom"
+  aiBaseUrl?: string; // auto-filled for presets, user-filled for custom
+  aiApiKey?: string; // masked like substackCookie
+  aiModel?: string; // e.g. "gemini-2.0-flash", "claude-3-5-haiku", "gpt-4o-mini"
   linkedinHandle?: string;
   createdAt: string;
   updatedAt: string;
@@ -79,7 +82,10 @@ export async function upsertUser(
       substackCookie: data.substackCookie ?? existingUser?.substackCookie,
       substackHandle: data.substackHandle ?? existingUser?.substackHandle,
       trilogyHandle: data.trilogyHandle ?? existingUser?.trilogyHandle,
-      geminiApiKey: data.geminiApiKey ?? existingUser?.geminiApiKey,
+      aiProvider: data.aiProvider ?? existingUser?.aiProvider,
+      aiBaseUrl: data.aiBaseUrl ?? existingUser?.aiBaseUrl,
+      aiApiKey: data.aiApiKey ?? existingUser?.aiApiKey,
+      aiModel: data.aiModel ?? existingUser?.aiModel,
       linkedinHandle: data.linkedinHandle ?? existingUser?.linkedinHandle,
       createdAt: existingUser?.createdAt || now,
       updatedAt: now,

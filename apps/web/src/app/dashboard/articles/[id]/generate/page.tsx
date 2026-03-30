@@ -42,6 +42,7 @@ export default function GeneratePage() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedCampaignId, setSavedCampaignId] = useState<string | null>(null);
+  const [needsAiKey, setNeedsAiKey] = useState(false);
 
   const articleId = params.id as string;
 
@@ -151,12 +152,20 @@ export default function GeneratePage() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate content");
+        const errorData = await response.json();
+
+        // Check for 402 Payment Required (AI key missing)
+        if (response.status === 402 && errorData.error === "ai_key_required") {
+          setNeedsAiKey(true);
+          return;
+        }
+
+        throw new Error(errorData.error || "Failed to generate content");
       }
 
       const data = await response.json();
       setter(data);
+      setNeedsAiKey(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate content");
     } finally {
@@ -475,6 +484,35 @@ export default function GeneratePage() {
 
               {/* Tab content */}
               <div className="p-6">
+                {needsAiKey && (
+                  <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start">
+                    <svg
+                      className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-sm text-yellow-800">
+                        Add your AI provider key in Settings to generate notes and posts{" "}
+                        <a
+                          href="/dashboard/settings"
+                          className="font-medium underline hover:text-yellow-900"
+                        >
+                          Go to Settings
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {error && (
                   <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
                     <p className="text-sm text-red-800">{error}</p>

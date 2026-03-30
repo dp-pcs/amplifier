@@ -17,7 +17,10 @@ export async function GET() {
         substackHandle: "",
         substackCookie: "",
         trilogyHandle: "",
-        geminiApiKey: "",
+        aiProvider: "gemini",
+        aiBaseUrl: "",
+        aiApiKey: "",
+        aiModel: "",
         linkedinHandle: "",
       });
     }
@@ -27,16 +30,19 @@ export async function GET() {
       ? `${"*".repeat(Math.max(0, user.substackCookie.length - 8))}${user.substackCookie.slice(-8)}`
       : "";
 
-    // Mask the Gemini API key - only show last 8 characters
-    const maskedGeminiKey = user.geminiApiKey
-      ? `${"*".repeat(Math.max(0, user.geminiApiKey.length - 8))}${user.geminiApiKey.slice(-8)}`
+    // Mask the AI API key - only show last 8 characters
+    const maskedAiKey = user.aiApiKey
+      ? `${"*".repeat(Math.max(0, user.aiApiKey.length - 8))}${user.aiApiKey.slice(-8)}`
       : "";
 
     return NextResponse.json({
       substackHandle: user.substackHandle || "",
       substackCookie: maskedCookie,
       trilogyHandle: user.trilogyHandle || "",
-      geminiApiKey: maskedGeminiKey,
+      aiProvider: user.aiProvider || "gemini",
+      aiBaseUrl: user.aiBaseUrl || "",
+      aiApiKey: maskedAiKey,
+      aiModel: user.aiModel || "",
       linkedinHandle: user.linkedinHandle || "",
     });
   } catch (error) {
@@ -57,14 +63,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { substackHandle, substackCookie, trilogyHandle, geminiApiKey, linkedinHandle } = body;
+    const { substackHandle, substackCookie, trilogyHandle, aiProvider, aiBaseUrl, aiApiKey, aiModel, linkedinHandle } = body;
 
     // Prepare update data - only include fields that are provided
     const updateData: {
       substackHandle?: string;
       substackCookie?: string;
       trilogyHandle?: string;
-      geminiApiKey?: string;
+      aiProvider?: string;
+      aiBaseUrl?: string;
+      aiApiKey?: string;
+      aiModel?: string;
       linkedinHandle?: string;
     } = {};
 
@@ -81,9 +90,21 @@ export async function POST(request: NextRequest) {
       updateData.trilogyHandle = trilogyHandle;
     }
 
-    if (geminiApiKey !== undefined && !geminiApiKey.startsWith("*")) {
+    if (aiProvider !== undefined) {
+      updateData.aiProvider = aiProvider;
+    }
+
+    if (aiBaseUrl !== undefined) {
+      updateData.aiBaseUrl = aiBaseUrl;
+    }
+
+    if (aiApiKey !== undefined && !aiApiKey.startsWith("*")) {
       // Only update API key if it's not the masked value
-      updateData.geminiApiKey = geminiApiKey;
+      updateData.aiApiKey = aiApiKey;
+    }
+
+    if (aiModel !== undefined) {
+      updateData.aiModel = aiModel;
     }
 
     if (linkedinHandle !== undefined) {
