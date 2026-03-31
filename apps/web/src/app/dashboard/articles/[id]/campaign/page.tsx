@@ -12,6 +12,8 @@ interface Article {
   description: string | null;
   coverImage: string | null;
   handle?: string;
+  alsLinkedinUrl?: string | null;
+  alsXUrl?: string | null;
 }
 
 interface CampaignItem {
@@ -579,10 +581,10 @@ export default function CampaignPage() {
                               <span className="text-xs text-blue-600">Post this as a comment after your post goes live</span>
                             </div>
                             <div className="bg-white border border-blue-200 rounded p-3 text-sm text-gray-800 font-mono select-all">
-                              Full article here: {article?.url}
+                              Full article here: {article?.alsLinkedinUrl || article?.url}
                             </div>
                             <button
-                              onClick={() => copyToClipboard(`Full article here: ${article?.url}`, `li-comment-${item.id}`)}
+                              onClick={() => copyToClipboard(`Full article here: ${article?.alsLinkedinUrl || article?.url}`, `li-comment-${item.id}`)}
                               className="mt-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >
                               {copiedId === `li-comment-${item.id}` ? "✓ Copied" : "Copy Comment"}

@@ -200,7 +200,13 @@ export default function ArticlesPage() {
   };
 
   const handleGenerateCampaign = (article: Article) => {
-    const articleWithHandle = { ...article, handle };
+    const als = alsLinks.get(article.url);
+    const articleWithHandle = {
+      ...article,
+      handle,
+      alsLinkedinUrl: als?.linkedin || null,
+      alsXUrl: als?.x || null,
+    };
     sessionStorage.setItem(`article_${article.id}`, JSON.stringify(articleWithHandle));
     router.push(`/dashboard/articles/${article.id}/campaign`);
   };
