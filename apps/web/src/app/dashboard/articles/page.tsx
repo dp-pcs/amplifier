@@ -16,6 +16,9 @@ interface Article {
 
 interface AlsLinks {
   linkedin: string;
+  x: string;
+  discord: string;
+  youtube: string;
   email: string;
 }
 
@@ -494,40 +497,30 @@ export default function ArticlesPage() {
                         <div className="text-xs text-gray-400">Loading tracking links...</div>
                       ) : alsLinks.has(article.url) ? (
                         <div className="space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">🔗 LinkedIn:</span>
-                            <a
-                              href={alsLinks.get(article.url)!.linkedin}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-[#2563EB] hover:underline truncate flex-1"
-                            >
-                              {alsLinks.get(article.url)!.linkedin.replace('https://', '')}
-                            </a>
-                            <button
-                              onClick={() => copyToClipboard(alsLinks.get(article.url)!.linkedin, `${article.id}-linkedin`)}
-                              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-0.5"
-                            >
-                              {copiedLink === `${article.id}-linkedin` ? "✓" : "Copy"}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">📧 Email:</span>
-                            <a
-                              href={alsLinks.get(article.url)!.email}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-[#2563EB] hover:underline truncate flex-1 ml-4"
-                            >
-                              {alsLinks.get(article.url)!.email.replace('https://', '')}
-                            </a>
-                            <button
-                              onClick={() => copyToClipboard(alsLinks.get(article.url)!.email, `${article.id}-email`)}
-                              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-0.5"
-                            >
-                              {copiedLink === `${article.id}-email` ? "✓" : "Copy"}
-                            </button>
-                          </div>
+                          {([
+                            { key: "linkedin", label: "🔗 LinkedIn", id: "linkedin" },
+                            { key: "x",        label: "🐦 X",        id: "x" },
+                            { key: "discord",  label: "💬 Discord",  id: "discord" },
+                            { key: "youtube",  label: "▶️ YouTube",  id: "youtube" },
+                          ] as const).map(({ key, label, id }) => (
+                            <div key={id} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500 w-20 flex-shrink-0">{label}:</span>
+                              <a
+                                href={(alsLinks.get(article.url) as any)[key]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-[#2563EB] hover:underline truncate flex-1"
+                              >
+                                {((alsLinks.get(article.url) as any)[key] as string).replace('https://', '')}
+                              </a>
+                              <button
+                                onClick={() => copyToClipboard((alsLinks.get(article.url) as any)[key], `${article.id}-${id}`)}
+                                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-0.5 flex-shrink-0"
+                              >
+                                {copiedLink === `${article.id}-${id}` ? "✓" : "Copy"}
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       ) : null}
                     </div>

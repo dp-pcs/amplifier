@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 
 // In-memory cache for als links (idempotent: same URL always returns same links)
-const linkCache = new Map<string, { linkedin: string; email: string }>();
+const linkCache = new Map<string, { linkedin: string; x: string; discord: string; youtube: string; email: string }>();
 
 export const dynamic = "force-dynamic";
 
@@ -52,15 +52,16 @@ export async function GET(req: NextRequest) {
 
       const data = await resp.json();
 
-      // ALS returns an array of { source, short_url } objects
-      // Pick LinkedIn and X (email fallback) sources
+      // ALS returns an array of { source, short_url } objects — capture all 4 platforms
       const links = Array.isArray(data?.links) ? data.links : [];
-      const linkedinEntry = links.find((l: any) => l.source?.toLowerCase() === "linkedin");
-      const xEntry = links.find((l: any) => l.source?.toLowerCase() === "x");
+      const find = (src: string) => links.find((l: any) => l.source?.toLowerCase() === src)?.short_url || url;
 
       const result = {
-        linkedin: linkedinEntry?.short_url || url,
-        email: xEntry?.short_url || url,
+        linkedin: find("linkedin"),
+        x: find("x"),
+        discord: find("discord"),
+        youtube: find("youtube"),
+        email: find("x"), // email fallback = X link
       };
 
       // Cache the result
