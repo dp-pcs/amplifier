@@ -19,6 +19,12 @@ interface AlsLinks {
   email: string;
 }
 
+interface AlsStats {
+  totalClicks: number | null;
+  dailyClicks: { date: string; clicks: number }[];
+  shortUrl: string | null;
+}
+
 export default function ArticlesPage() {
   const router = useRouter();
   const [handle, setHandle] = useState("");
@@ -35,6 +41,7 @@ export default function ArticlesPage() {
   const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
   const [alsLinks, setAlsLinks] = useState<Map<string, AlsLinks>>(new Map());
   const [alsLoading, setAlsLoading] = useState<Set<string>>(new Set());
+  const [alsStats, setAlsStats] = useState<Map<string, AlsStats>>(new Map());
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   // Load saved handles from settings on mount
@@ -216,11 +223,26 @@ export default function ArticlesPage() {
     }
   };
 
-  // Fetch als links for all visible articles after they load
+  // Fetch als stats for an article
+  const fetchAlsStats = async (articleUrl: string) => {
+    if (alsStats.has(articleUrl)) return;
+    try {
+      const response = await fetch(`/api/als/stats?url=${encodeURIComponent(articleUrl)}`);
+      if (response.ok) {
+        const stats = await response.json();
+        setAlsStats(prev => new Map(prev).set(articleUrl, stats));
+      }
+    } catch (error) {
+      console.error("Failed to fetch als stats:", error);
+    }
+  };
+
+  // Fetch als links and stats for all visible articles after they load
   useEffect(() => {
     if (articles.length > 0) {
       filteredArticles.forEach(article => {
         fetchAlsLinks(article.url);
+        fetchAlsStats(article.url);
       });
     }
   }, [articles]);
@@ -368,9 +390,22 @@ export default function ArticlesPage() {
                         </p>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mb-4">
-                      {formatDate(article.date)}
-                    </p>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-xs text-gray-500">
+                        {formatDate(article.date)}
+                      </p>
+                      {alsStats.has(article.url) && alsStats.get(article.url)!.totalClicks !== null && (
+                        <a
+                          href={alsStats.get(article.url)!.shortUrl || article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Total tracked clicks — click to open short link"
+                          className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+                        >
+                          👆 {alsStats.get(article.url)!.totalClicks} clicks
+                        </a>
+                      )}
+                    </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleGenerateCampaign(article)}
