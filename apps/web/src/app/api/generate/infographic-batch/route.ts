@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: IMAGE_MODEL });
 
-    const results: Array<{ id: number; image: string; mimeType: string } | { id: number; error: string }> = [];
+    const results: Array<{ id: number; url: string; s3Key: string; mimeType: string } | { id: number; error: string }> = [];
 
     for (const item of items) {
       try {
