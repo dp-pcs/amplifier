@@ -423,15 +423,15 @@ export default function ArticlesPage() {
                       <p className="text-xs text-gray-500">
                         {formatDate(article.date)}
                       </p>
-                      {alsStats.has(article.url) && alsStats.get(article.url)!.totalClicks !== null && (
+                      {alsStats.has(article.url) && (
                         <a
-                          href={alsStats.get(article.url)!.shortUrl || article.url}
+                          href={alsStats.get(article.url)!.shortUrl || alsLinks.get(article.url)?.linkedin || article.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Total tracked clicks — click to open short link"
                           className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
                         >
-                          👆 {alsStats.get(article.url)!.totalClicks} clicks
+                          👆 {alsStats.get(article.url)!.totalClicks ?? 0} clicks
                         </a>
                       )}
                     </div>
