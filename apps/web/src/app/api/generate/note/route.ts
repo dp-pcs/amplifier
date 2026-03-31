@@ -92,10 +92,10 @@ Return ONLY the note text with the URL included. No extra commentary.`;
     }
 
     return NextResponse.json({ note: finalNote });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating Substack note:", error);
     return NextResponse.json(
-      { error: "Failed to generate note" },
+      { error: error?.message || "Failed to generate note" },
       { status: 500 }
     );
   }
