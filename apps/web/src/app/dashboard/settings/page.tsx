@@ -83,6 +83,9 @@ export default function SettingsPage() {
     }
   };
 
+  const currentProvider = AI_PROVIDERS.find((p) => p.id === settings.aiProvider);
+  const modelOptions = currentProvider?.models ?? [];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -312,25 +315,72 @@ export default function SettingsPage() {
                   >
                     Model
                   </label>
-                  <input
-                    type="text"
-                    id="aiModel"
-                    value={settings.aiModel}
-                    onChange={(e) =>
-                      setSettings({ ...settings, aiModel: e.target.value })
-                    }
-                    placeholder="Model name"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1"
-                    style={{ borderColor: "#E2E8F0", color: "#0F172A" }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#2563EB";
-                      e.target.style.boxShadow = "0 0 0 1px #2563EB";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#E2E8F0";
-                      e.target.style.boxShadow = "none";
-                    }}
-                  />
+                  {modelOptions.length > 0 ? (
+                    <>
+                      <select
+                        id="aiModel"
+                        value={modelOptions.some((m) => m.id === settings.aiModel) ? settings.aiModel : "__custom__"}
+                        onChange={(e) => {
+                          if (e.target.value !== "__custom__") {
+                            setSettings({ ...settings, aiModel: e.target.value });
+                          }
+                        }}
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1"
+                        style={{ borderColor: "#E2E8F0", color: "#0F172A", background: "#FFFFFF" }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#2563EB";
+                          e.target.style.boxShadow = "0 0 0 1px #2563EB";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#E2E8F0";
+                          e.target.style.boxShadow = "none";
+                        }}
+                      >
+                        {modelOptions.map((m) => (
+                          <option key={m.id} value={m.id}>{m.label}</option>
+                        ))}
+                        <option value="__custom__">Custom model ID...</option>
+                      </select>
+                      {(!modelOptions.some((m) => m.id === settings.aiModel) || settings.aiModel === "") && (
+                        <input
+                          type="text"
+                          value={settings.aiModel}
+                          onChange={(e) => setSettings({ ...settings, aiModel: e.target.value })}
+                          placeholder="Enter model ID"
+                          className="w-full mt-2 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 text-sm font-mono"
+                          style={{ borderColor: "#E2E8F0", color: "#0F172A" }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#2563EB";
+                            e.target.style.boxShadow = "0 0 0 1px #2563EB";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#E2E8F0";
+                            e.target.style.boxShadow = "none";
+                          }}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <input
+                      type="text"
+                      id="aiModel"
+                      value={settings.aiModel}
+                      onChange={(e) =>
+                        setSettings({ ...settings, aiModel: e.target.value })
+                      }
+                      placeholder="Model name (e.g. gpt-4o)"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1"
+                      style={{ borderColor: "#E2E8F0", color: "#0F172A" }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#2563EB";
+                        e.target.style.boxShadow = "0 0 0 1px #2563EB";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#E2E8F0";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  )}
                 </div>
 
                 {settings.aiProvider === "custom" && (

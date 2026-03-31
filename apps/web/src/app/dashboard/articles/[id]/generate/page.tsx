@@ -253,7 +253,6 @@ export default function GeneratePage() {
 
   const handleDownloadInfographic = () => {
     if (!infographicData) return;
-
     const link = document.createElement("a");
     link.href = `data:${infographicData.mimeType};base64,${infographicData.image}`;
     link.download = `infographic-${article?.id}.png`;

@@ -3,7 +3,7 @@
   "name": "Amplifier — Substack Cookie Sync",
   "version": "1.0.0",
   "description": "One-click sync your Substack session to Amplifier",
-  "permissions": ["cookies", "activeTab", "storage"],
+  "permissions": ["cookies", "activeTab", "storage", "scripting", "tabs"],
   "host_permissions": [
     "https://*.substack.com/*",
     "https://amplify.elelem.expert/*",

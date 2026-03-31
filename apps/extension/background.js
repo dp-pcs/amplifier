@@ -1,79 +1,66 @@
-// background.js - Service worker for handling cookie fetching and API requests
+// background.js - Amplifier Substack Cookie Sync
 
-// Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'syncCookie') {
     handleCookieSync().then(sendResponse);
-    return true; // Keep message channel open for async response
+    return true;
   }
 });
 
+async function getCookiesForDomain(domain) {
+  const domains = [`.${domain}`, domain, `.www.${domain}`];
+  const allCookies = [];
+  for (const d of domains) {
+    try {
+      const cookies = await chrome.cookies.getAll({ domain: d });
+      allCookies.push(...cookies);
+    } catch (e) {}
+  }
+  // Deduplicate
+  return allCookies.filter((c, i, self) =>
+    i === self.findIndex(x => x.name === c.name && x.domain === c.domain)
+  );
+}
+
 async function handleCookieSync() {
   try {
-    // Get the connect.sid cookie from Substack
-    const cookie = await chrome.cookies.get({
-      url: 'https://substack.com',
-      name: 'connect.sid'
-    });
+    // Get ALL substack cookies — getAll() returns httpOnly cookies too
+    const cookies = await getCookiesForDomain('substack.com');
 
-    if (!cookie) {
-      return {
-        success: false,
-        error: 'No Substack cookie found. Please log in to Substack first.'
-      };
+    if (!cookies.length) {
+      return { success: false, error: 'No Substack cookies found. Please log in to Substack first.' };
     }
 
-    // Get dev mode setting to determine target URL
+    // Find substack.sid (the session cookie)
+    const sidCookie = cookies.find(c => c.name === 'substack.sid');
+    if (!sidCookie) {
+      return { success: false, error: 'Substack session cookie not found. Please log in to Substack first.' };
+    }
+
     const { devMode } = await chrome.storage.local.get(['devMode']);
-    const baseUrl = devMode
-      ? 'http://localhost:3000'
-      : 'https://amplify.elelem.expert';
+    const baseUrl = devMode ? 'http://localhost:3000' : 'https://amplify.elelem.expert';
 
-    // Get session token (if user has logged into Amplifier web app)
-    const { amplifierSession } = await chrome.storage.local.get(['amplifierSession']);
-
-    // Send cookie to Amplifier API
     const response = await fetch(`${baseUrl}/api/settings/cookie`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Include session token if available
-        ...(amplifierSession && { 'Cookie': `next-auth.session-token=${amplifierSession}` })
-      },
-      credentials: 'include', // Include cookies for authentication
-      body: JSON.stringify({
-        cookie: cookie.value
-      })
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ cookie: sidCookie.value })
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return {
-        success: false,
-        error: errorData.error || `Server error: ${response.status}`
-      };
+      const err = await response.json().catch(() => ({}));
+      return { success: false, error: err.error || `Server error: ${response.status}` };
     }
 
     const data = await response.json();
+    return data.ok ? { success: true } : { success: false, error: data.error || 'Unknown error' };
 
-    if (data.ok) {
-      return { success: true };
-    } else {
-      return {
-        success: false,
-        error: data.error || 'Unknown error occurred'
-      };
-    }
   } catch (error) {
-    return {
-      success: false,
-      error: error.message
-    };
+    return { success: false, error: error.message };
   }
 }
 
-// Optional: Listen for Amplifier login to capture session token
-// This would require additional setup in the web app to communicate with the extension
+// Track Amplifier session token
 chrome.cookies.onChanged.addListener((changeInfo) => {
   if (changeInfo.cookie.name === 'next-auth.session-token' &&
       changeInfo.cookie.domain.includes('amplify.elelem.expert')) {

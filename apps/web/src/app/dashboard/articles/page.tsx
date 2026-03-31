@@ -61,8 +61,8 @@ export default function ArticlesPage() {
     loadSavedHandles();
   }, []);
 
-  const fetchArticles = async (newOffset: number = 0, append: boolean = false) => {
-    if (!handle.trim()) {
+  const fetchArticlesForHandle = async (targetHandle: string, newOffset: number = 0, append: boolean = false) => {
+    if (!targetHandle.trim()) {
       setError("Please enter a Substack handle");
       return;
     }
@@ -72,7 +72,7 @@ export default function ArticlesPage() {
 
     try {
       const response = await fetch(
-        `/api/articles?handle=${encodeURIComponent(handle)}&offset=${newOffset}&limit=20`
+        `/api/articles?handle=${encodeURIComponent(targetHandle)}&offset=${newOffset}&limit=20`
       );
 
       if (!response.ok) {
@@ -88,7 +88,7 @@ export default function ArticlesPage() {
         setArticles(data.articles);
 
         // Extract unique authors for filtering (only for org publication)
-        if (trilogyHandle && handle === trilogyHandle) {
+        if (trilogyHandle && targetHandle === trilogyHandle) {
           const authors = new Set<string>();
           data.articles.forEach((article: Article) => {
             article.authors?.forEach(author => authors.add(author));
@@ -112,9 +112,13 @@ export default function ArticlesPage() {
     }
   };
 
+  const fetchArticles = (newOffset: number = 0, append: boolean = false) => {
+    return fetchArticlesForHandle(handle, newOffset, append);
+  };
+
   const handleBrowse = () => {
     setOffset(0);
-    fetchArticles(0, false);
+    fetchArticlesForHandle(handle, 0, false);
   };
 
   const switchToUserPublication = () => {
@@ -133,6 +137,10 @@ export default function ArticlesPage() {
     setOffset(0);
     setAvailableAuthors([]);
     setSelectedAuthors(new Set());
+    // Auto-fetch when switching to org publication
+    if (trilogyHandle.trim()) {
+      setTimeout(() => fetchArticlesForHandle(trilogyHandle, 0, false), 0);
+    }
   };
 
   const toggleAuthor = (author: string) => {
@@ -163,10 +171,15 @@ export default function ArticlesPage() {
   };
 
   const handleSelectArticle = (article: Article) => {
-    // Cache article data in sessionStorage for the detail page
     const articleWithHandle = { ...article, handle };
     sessionStorage.setItem(`article_${article.id}`, JSON.stringify(articleWithHandle));
     router.push(`/dashboard/articles/${article.id}/generate`);
+  };
+
+  const handleGenerateCampaign = (article: Article) => {
+    const articleWithHandle = { ...article, handle };
+    sessionStorage.setItem(`article_${article.id}`, JSON.stringify(articleWithHandle));
+    router.push(`/dashboard/articles/${article.id}/campaign`);
   };
 
   const formatDate = (dateString: string) => {
@@ -358,12 +371,20 @@ export default function ArticlesPage() {
                     <p className="text-xs text-gray-500 mb-4">
                       {formatDate(article.date)}
                     </p>
-                    <button
-                      onClick={() => handleSelectArticle(article)}
-                      className="w-full px-4 py-2 bg-[#2563EB] text-white text-sm font-medium rounded-lg hover:bg-[#1D4ED8] transition-colors"
-                    >
-                      Select
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleGenerateCampaign(article)}
+                        className="flex-1 px-3 py-2 bg-[#2563EB] text-white text-sm font-medium rounded-lg hover:bg-[#1D4ED8] transition-colors"
+                      >
+                        🚀 Campaign
+                      </button>
+                      <button
+                        onClick={() => handleSelectArticle(article)}
+                        className="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        Single
+                      </button>
+                    </div>
 
                     {/* ALS Tracking Links */}
                     <div className="mt-3 pt-3 border-t border-gray-100">
