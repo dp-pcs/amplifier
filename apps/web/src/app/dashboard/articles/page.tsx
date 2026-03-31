@@ -25,6 +25,18 @@ interface AlsStats {
   shortUrl: string | null;
 }
 
+interface SubstackStats {
+  views: number;
+  opens: number;
+  openRate: number;
+  clicks: number;
+  signups: number;
+  likes: number;
+  restacks: number;
+  comments: number;
+  engagementRate: number;
+}
+
 export default function ArticlesPage() {
   const router = useRouter();
   const [handle, setHandle] = useState("");
@@ -42,6 +54,7 @@ export default function ArticlesPage() {
   const [alsLinks, setAlsLinks] = useState<Map<string, AlsLinks>>(new Map());
   const [alsLoading, setAlsLoading] = useState<Set<string>>(new Set());
   const [alsStats, setAlsStats] = useState<Map<string, AlsStats>>(new Map());
+  const [substackStats, setSubstackStats] = useState<Map<string, SubstackStats>>(new Map());
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   // Load saved handles from settings on mount
@@ -237,13 +250,29 @@ export default function ArticlesPage() {
     }
   };
 
-  // Fetch als links and stats for all visible articles after they load
+  // Bulk-fetch Substack stats for the current handle
+  const fetchSubstackStats = async (targetHandle: string) => {
+    if (!targetHandle) return;
+    try {
+      const resp = await fetch(`/api/substack/stats?handle=${encodeURIComponent(targetHandle)}&limit=100`);
+      if (resp.ok) {
+        const data: Record<string, SubstackStats> = await resp.json();
+        setSubstackStats(new Map(Object.entries(data)));
+      }
+    } catch (err) {
+      console.error("Failed to fetch Substack stats:", err);
+    }
+  };
+
+  // Fetch als links, als stats, and Substack stats when articles load
   useEffect(() => {
     if (articles.length > 0) {
       filteredArticles.forEach(article => {
         fetchAlsLinks(article.url);
         fetchAlsStats(article.url);
       });
+      // Bulk fetch Substack stats for the current handle
+      if (handle) fetchSubstackStats(handle);
     }
   }, [articles]);
 
@@ -420,6 +449,44 @@ export default function ArticlesPage() {
                         Single
                       </button>
                     </div>
+
+                    {/* Substack Stats */}
+                    {(() => {
+                      const slug = article.url.split("/").filter(Boolean).pop();
+                      const ss = slug ? substackStats.get(slug) : null;
+                      if (!ss) return null;
+                      return (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <p className="text-xs font-medium text-gray-500 mb-1.5">📊 Substack stats</p>
+                          <div className="grid grid-cols-3 gap-1 text-center">
+                            <div className="bg-gray-50 rounded p-1.5">
+                              <div className="text-sm font-semibold text-gray-800">{ss.views.toLocaleString()}</div>
+                              <div className="text-xs text-gray-500">views</div>
+                            </div>
+                            <div className="bg-gray-50 rounded p-1.5">
+                              <div className="text-sm font-semibold text-gray-800">{(ss.openRate * 100).toFixed(1)}%</div>
+                              <div className="text-xs text-gray-500">open rate</div>
+                            </div>
+                            <div className="bg-gray-50 rounded p-1.5">
+                              <div className="text-sm font-semibold text-gray-800">{ss.signups}</div>
+                              <div className="text-xs text-gray-500">signups</div>
+                            </div>
+                            <div className="bg-gray-50 rounded p-1.5">
+                              <div className="text-sm font-semibold text-gray-800">{ss.likes}</div>
+                              <div className="text-xs text-gray-500">❤️ likes</div>
+                            </div>
+                            <div className="bg-gray-50 rounded p-1.5">
+                              <div className="text-sm font-semibold text-gray-800">{ss.restacks}</div>
+                              <div className="text-xs text-gray-500">restacks</div>
+                            </div>
+                            <div className="bg-gray-50 rounded p-1.5">
+                              <div className="text-sm font-semibold text-gray-800">{ss.comments}</div>
+                              <div className="text-xs text-gray-500">comments</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* ALS Tracking Links */}
                     <div className="mt-3 pt-3 border-t border-gray-100">
