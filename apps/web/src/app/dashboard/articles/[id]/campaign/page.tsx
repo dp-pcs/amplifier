@@ -261,25 +261,39 @@ export default function CampaignPage() {
 
     const assets: any[] = [];
     for (const item of analysis.items) {
+      // Truncate content to stay well under DynamoDB's 400KB item limit
+      const noteContent = item.substackNote.substring(0, 1000);
+      const linkedinContent = item.linkedinPost.substring(0, 3000);
+
       assets.push({
         id: crypto.randomUUID(),
         type: "note",
-        content: `[${item.angle}]\n\n${item.substackNote}`,
+        content: noteContent,
+        angle: item.angle,
+        dayToPost: item.dayToPost ?? null,
+        tone: item.tone ?? null,
         status: item.substackPosted ? "posted" : "draft",
+        postedAt: item.substackPostedAt ?? null,
         createdAt: new Date().toISOString(),
       });
       assets.push({
         id: crypto.randomUUID(),
         type: "linkedin",
-        content: `[${item.angle}]\n\n${item.linkedinPost}`,
-        status: "draft",
+        content: linkedinContent,
+        angle: item.angle,
+        dayToPost: item.dayToPost ?? null,
+        tone: item.tone ?? null,
+        status: item.linkedinPosted ? "posted" : "draft",
+        postedAt: item.linkedinPostedAt ?? null,
         createdAt: new Date().toISOString(),
       });
+      // Infographics are too large for DynamoDB — store metadata only
       if (item.infographic) {
         assets.push({
           id: crypto.randomUUID(),
           type: "infographic",
-          content: item.infographic.image,
+          content: `[infographic:${item.infographicStyle || "chart"}]`,
+          angle: item.angle,
           status: "draft",
           createdAt: new Date().toISOString(),
         });
