@@ -6,6 +6,12 @@ import { generateText } from "@/lib/ai-client";
 /** Fetch a URL and strip HTML to plain text */
 async function fetchArticleText(url: string): Promise<string> {
   try {
+    // Validate URL before fetching — Node throws "string did not match expected pattern" for bad URLs
+    new URL(url);
+  } catch {
+    return "";
+  }
+  try {
     const res = await fetch(url, {
       headers: { "User-Agent": "AmplifierBot/1.0" },
       signal: AbortSignal.timeout(10000),
