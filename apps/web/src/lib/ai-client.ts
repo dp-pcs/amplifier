@@ -12,14 +12,14 @@ function isAnthropicUrl(baseUrl: string): boolean {
 export async function generateText(
   prompt: string,
   systemPrompt: string,
-  config: { baseUrl: string; apiKey: string; model: string }
+  config: { baseUrl: string; apiKey: string; model: string; maxTokens?: number }
 ): Promise<string> {
   try {
     if (isAnthropicUrl(config.baseUrl)) {
       const client = new Anthropic({ apiKey: config.apiKey });
       const response = await client.messages.create({
         model: config.model,
-        max_tokens: 1024,
+        max_tokens: config.maxTokens ?? 1024,
         system: systemPrompt,
         messages: [{ role: "user", content: prompt }],
       });
@@ -34,7 +34,7 @@ export async function generateText(
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
-      max_tokens: 1024,
+      max_tokens: config.maxTokens ?? 1024,
     });
     return response.choices[0]?.message?.content ?? "";
   } catch (err: any) {
