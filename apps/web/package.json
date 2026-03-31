@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@aws-sdk/client-dynamodb": "^3.1019.0",
     "@aws-sdk/lib-dynamodb": "^3.1019.0",
     "@google/generative-ai": "^0.24.1",

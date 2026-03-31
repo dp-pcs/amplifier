@@ -77,10 +77,10 @@ Return ONLY the LinkedIn post. No extra commentary.`;
     });
 
     return NextResponse.json({ post });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating LinkedIn post:", error);
     return NextResponse.json(
-      { error: "Failed to generate LinkedIn post" },
+      { error: error?.message || "Failed to generate LinkedIn post" },
       { status: 500 }
     );
   }

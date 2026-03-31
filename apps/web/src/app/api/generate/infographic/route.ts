@@ -12,7 +12,13 @@ export async function POST(req: NextRequest) {
     const { title, description, url } = await req.json();
 
     // Use server API key for infographic generation
-    const apiKey = process.env.GOOGLE_API_KEY || "";
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "Infographic generation is not configured on this server" },
+        { status: 503 }
+      );
+    }
     const genAI = new GoogleGenerativeAI(apiKey);
 
     if (!title) {
@@ -62,10 +68,10 @@ Style: Modern, professional, tech industry, data visualization aesthetic`;
       image: base64Image,
       mimeType: mimeType || "image/png",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating infographic:", error);
     return NextResponse.json(
-      { error: "Failed to generate infographic" },
+      { error: error?.message || "Failed to generate infographic" },
       { status: 500 }
     );
   }
