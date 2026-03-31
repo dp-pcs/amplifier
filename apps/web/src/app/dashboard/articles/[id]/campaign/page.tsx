@@ -28,6 +28,9 @@ interface CampaignItem {
   infographic?: { image: string; mimeType: string } | null;
   infographicLoading?: boolean;
   substackPosted?: boolean;
+  substackPostedAt?: string;
+  linkedinPosted?: boolean;
+  linkedinPostedAt?: string;
   noteEdited?: boolean;
   postEdited?: boolean;
 }
@@ -67,25 +70,30 @@ export default function CampaignPage() {
     fetch("/api/settings")
       .then(r => r.json())
       .then(data => {
-        if (data.substackHandle) setUserHandle(data.substackHandle);
-        if (data.trilogyHandle) setTrilogyHandle(data.trilogyHandle);
-      });
+        const uh = data.substackHandle || null;
+        const th = data.trilogyHandle || null;
+        if (uh) setUserHandle(uh);
+        if (th) setTrilogyHandle(th);
 
-    const cached = sessionStorage.getItem(`article_${articleId}`);
-    if (cached) {
-      try {
-        const a = JSON.parse(cached);
-        setArticle(a);
-        if (a.handle && a.handle === userHandle) setIsOwnArticle(true);
-      } catch {}
-    }
+        // Auto-check "My article" once we have handles
+        const cached = sessionStorage.getItem(`article_${articleId}`);
+        if (cached) {
+          try {
+            const a = JSON.parse(cached);
+            setArticle(a);
+            if (a.handle && (a.handle === uh || a.handle === th)) {
+              setIsOwnArticle(true);
+            }
+          } catch {}
+        }
+      });
   }, [articleId]);
 
   useEffect(() => {
-    if (article?.handle && userHandle) {
-      setIsOwnArticle(article.handle === userHandle);
+    if (article?.handle && (userHandle || trilogyHandle)) {
+      setIsOwnArticle(article.handle === userHandle || article.handle === trilogyHandle);
     }
-  }, [article, userHandle]);
+  }, [article, userHandle, trilogyHandle]);
 
   const handleAnalyze = async () => {
     if (!article) return;
@@ -211,9 +219,10 @@ export default function CampaignPage() {
         body: JSON.stringify({ content: item.substackNote }),
       });
       if (res.ok) {
+        const postedAt = new Date().toISOString();
         setAnalysis(prev => prev ? {
           ...prev,
-          items: prev.items.map(i => i.id === item.id ? { ...i, substackPosted: true } : i),
+          items: prev.items.map(i => i.id === item.id ? { ...i, substackPosted: true, substackPostedAt: postedAt } : i),
         } : prev);
       } else {
         const err = await res.json();
@@ -224,6 +233,14 @@ export default function CampaignPage() {
     } finally {
       setPostingId(null);
     }
+  };
+
+  const markLinkedInPosted = (item: CampaignItem) => {
+    const postedAt = new Date().toISOString();
+    setAnalysis(prev => prev ? {
+      ...prev,
+      items: prev.items.map(i => i.id === item.id ? { ...i, linkedinPosted: true, linkedinPostedAt: postedAt } : i),
+    } : prev);
   };
 
   const downloadInfographic = (item: CampaignItem) => {
@@ -458,8 +475,13 @@ export default function CampaignPage() {
                           </span>
                         )}
                         {item.substackPosted && (
-                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
-                            ✓ Posted
+                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full" title={item.substackPostedAt ? `Posted ${new Date(item.substackPostedAt).toLocaleString()}` : ""}>
+                            ✓ Substack
+                          </span>
+                        )}
+                        {item.linkedinPosted && (
+                          <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full" title={item.linkedinPostedAt ? `Posted ${new Date(item.linkedinPostedAt).toLocaleString()}` : ""}>
+                            ✓ LinkedIn
                           </span>
                         )}
                       </div>
@@ -520,20 +542,50 @@ export default function CampaignPage() {
 
                       {/* LinkedIn Post */}
                       {activeTab === "linkedin" && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 block mb-2">LinkedIn Post</label>
-                          <textarea
-                            value={item.linkedinPost}
-                            onChange={e => updatePost(item.id, e.target.value)}
-                            rows={10}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono"
-                          />
-                          <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="space-y-4">
+                          {/* Post body */}
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="text-sm font-medium text-gray-700">LinkedIn Post</label>
+                              <span className="text-xs text-gray-400">No links in post body — link goes in follow-on comment</span>
+                            </div>
+                            <textarea
+                              value={item.linkedinPost}
+                              onChange={e => updatePost(item.id, e.target.value)}
+                              rows={10}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono"
+                            />
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <button
+                                onClick={() => copyToClipboard(item.linkedinPost, `li-${item.id}`)}
+                                className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                              >
+                                {copiedId === `li-${item.id}` ? "✓ Copied" : "Copy Post"}
+                              </button>
+                              <button
+                                onClick={() => markLinkedInPosted(item)}
+                                disabled={item.linkedinPosted}
+                                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                {item.linkedinPosted ? `✓ Posted${item.linkedinPostedAt ? ` · ${new Date(item.linkedinPostedAt).toLocaleDateString()}` : ""}` : "Mark as Posted"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Follow-on comment */}
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="text-sm font-semibold text-blue-800">💬 Follow-on Comment</label>
+                              <span className="text-xs text-blue-600">Post this as a comment after your post goes live</span>
+                            </div>
+                            <div className="bg-white border border-blue-200 rounded p-3 text-sm text-gray-800 font-mono select-all">
+                              Full article here: {article?.url}
+                            </div>
                             <button
-                              onClick={() => copyToClipboard(item.linkedinPost, `li-${item.id}`)}
-                              className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                              onClick={() => copyToClipboard(`Full article here: ${article?.url}`, `li-comment-${item.id}`)}
+                              className="mt-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >
-                              {copiedId === `li-${item.id}` ? "✓ Copied" : "Copy"}
+                              {copiedId === `li-comment-${item.id}` ? "✓ Copied" : "Copy Comment"}
                             </button>
                           </div>
                         </div>

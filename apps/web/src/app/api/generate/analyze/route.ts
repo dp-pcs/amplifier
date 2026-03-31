@@ -134,7 +134,7 @@ Tasks:
 3. Assign each angle a tone from: ${toneVariants.join(", ")}. Vary the tones across items.
 4. For each angle, determine if an infographic would help (complex data, frameworks, step-by-step processes, comparisons, statistics).
 5. Write one Substack Note (≤280 chars) for each angle in ${perspective}.
-6. Write one LinkedIn post (150-250 words) for each angle in ${perspective}.
+6. Write one LinkedIn post body (150-250 words) for each angle in ${perspective} — NO links in the body.
 
 Rules for Substack Notes:
 - Max 280 characters INCLUDING the URL
@@ -146,9 +146,10 @@ Rules for LinkedIn posts:
 - 150-250 words
 - Strong opening hook relevant to this specific angle
 - 3-4 bullet points or short paragraphs
-- Clear CTA with article URL
+- NO links anywhere in the post body (LinkedIn algorithm penalizes posts with links)
 - 3-4 relevant hashtags at the end
 - Each post covers a DIFFERENT aspect of the article
+- The follow-on comment with the article link is handled separately — do NOT include it in linkedinPost
 
 Return ONLY valid JSON (no markdown fences, no explanation):
 {
@@ -165,7 +166,7 @@ Return ONLY valid JSON (no markdown fences, no explanation):
       "infographicReason": "Specific reason why visual helps here (null if false)",
       "infographicStyle": "flow|comparison|list|architecture|stat",
       "substackNote": "The full note text with URL, max 280 chars",
-      "linkedinPost": "The full LinkedIn post"
+      "linkedinPost": "The full LinkedIn post body — no links"
     }
   ]
 }`;
