@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { exec } from "child_process";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
 
 // In-memory cache for als links (idempotent: same URL always returns same links)
 const linkCache = new Map<string, { linkedin: string; email: string }>();
 
 export const dynamic = "force-dynamic";
+
+const ALS_API_BASE = "https://dumhbtxskncofwwzrmfx.supabase.co/functions/v1";
 
 export async function GET(req: NextRequest) {
   try {
@@ -29,34 +27,49 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(linkCache.get(url));
     }
 
-    // Run als shorten command to get all tracking links
+    const apiKey = process.env.ALS_API_KEY;
+    if (!apiKey) {
+      console.warn("ALS_API_KEY not set — falling back to original URL");
+      return NextResponse.json({ linkedin: url, email: url });
+    }
+
+    // Call the ALS Supabase edge function directly (no CLI dependency)
     try {
-      const { stdout } = await execAsync(`als shorten "${url}"`);
+      const resp = await fetch(`${ALS_API_BASE}/shorten-url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(10000),
+      });
 
-      // Parse the text output - als returns plain text with multiple source links
-      // Format: "    LinkedIn      https://aicoe.fit/xxxxx-xxxxxx"
-      const lines = stdout.split('\n');
-      const linkedinMatch = lines.find(line => line.trim().startsWith('LinkedIn'));
-      const linkedinUrl = linkedinMatch ? linkedinMatch.split(/\s+/).pop() : url;
+      if (!resp.ok) {
+        console.error("ALS API error:", resp.status, await resp.text());
+        return NextResponse.json({ linkedin: url, email: url });
+      }
 
-      // Use X (Twitter) as email fallback since there's no dedicated email source
-      const xMatch = lines.find(line => line.trim().startsWith('X'));
-      const emailUrl = xMatch ? xMatch.split(/\s+/).pop() : url;
+      const data = await resp.json();
 
-      const links = {
-        linkedin: linkedinUrl || url,
-        email: emailUrl || url,
+      // ALS returns an array of { source, short_url } objects
+      // Pick LinkedIn and X (email fallback) sources
+      const links = Array.isArray(data?.links) ? data.links : [];
+      const linkedinEntry = links.find((l: any) => l.source?.toLowerCase() === "linkedin");
+      const xEntry = links.find((l: any) => l.source?.toLowerCase() === "x");
+
+      const result = {
+        linkedin: linkedinEntry?.short_url || url,
+        email: xEntry?.short_url || url,
       };
 
       // Cache the result
-      linkCache.set(url, links);
+      linkCache.set(url, result);
 
-      return NextResponse.json(links);
+      return NextResponse.json(result);
     } catch (error) {
-      // Fallback to original URL if als fails
-      console.error("als command failed:", error);
-      const fallback = { linkedin: url, email: url };
-      return NextResponse.json(fallback);
+      console.error("ALS API call failed:", error);
+      return NextResponse.json({ linkedin: url, email: url });
     }
   } catch (error) {
     console.error("Error in als route:", error);
