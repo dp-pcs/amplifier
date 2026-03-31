@@ -23,8 +23,9 @@ export const AI_PROVIDERS: AIProvider[] = [
     id: "claude",
     label: "Claude (Anthropic)",
     baseUrl: "https://api.anthropic.com/v1",
-    defaultModel: "claude-3-5-sonnet-20241022",
+    defaultModel: "claude-sonnet-4-6",
     models: [
+      { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6 (latest)" },
       { id: "claude-opus-4-5", label: "Claude Opus 4.5" },
       { id: "claude-sonnet-4-5", label: "Claude Sonnet 4.5" },
       { id: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
