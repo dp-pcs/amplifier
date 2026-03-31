@@ -254,7 +254,7 @@ export default function ArticlesPage() {
   const fetchSubstackStats = async (targetHandle: string) => {
     if (!targetHandle) return;
     try {
-      const resp = await fetch(`/api/substack/stats?handle=${encodeURIComponent(targetHandle)}&limit=100`);
+      const resp = await fetch(`/api/substack/stats?handle=${encodeURIComponent(targetHandle)}&limit=50`);
       if (resp.ok) {
         const data: Record<string, SubstackStats> = await resp.json();
         setSubstackStats(new Map(Object.entries(data)));
