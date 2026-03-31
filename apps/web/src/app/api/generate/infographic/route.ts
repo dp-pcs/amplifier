@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,7 +10,6 @@ export async function POST(req: NextRequest) {
 
     const { title, description, url } = await req.json();
 
-    // Use server API key for infographic generation
     const apiKey = process.env.GOOGLE_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
@@ -19,18 +17,13 @@ export async function POST(req: NextRequest) {
         { status: 503 }
       );
     }
-    const genAI = new GoogleGenerativeAI(apiKey);
 
     if (!title) {
-      return NextResponse.json(
-        { error: "title is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "title is required" }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_IMAGE_MODEL || "imagen-3.0-generate-001",
-    });
+    // Gemini native image generation (Nano Banana) - uses generateContent with responseModalities
+    const imageModel = process.env.GEMINI_IMAGE_MODEL || "gemini-2.0-flash-preview-image-generation";
 
     const prompt = `Create a professional LinkedIn-ready infographic for an article.
 
@@ -52,21 +45,48 @@ Design specifications:
 
 Style: Modern, professional, tech industry, data visualization aesthetic`;
 
-    const result = await model.generateContent(prompt);
+    // Call Gemini native image generation via generateContent
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseModalities: ["TEXT", "IMAGE"],
+            imageConfig: {
+              aspectRatio: "16:9",
+            },
+          },
+        }),
+        signal: AbortSignal.timeout(90000),
+      }
+    );
 
-    // Get the image data from the response
-    const image = result.response.candidates?.[0]?.content?.parts?.[0];
-
-    if (!image || !('inlineData' in image) || !image.inlineData) {
-      throw new Error("No image generated");
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Gemini image API error:", response.status, errText);
+      throw new Error(`Image generation failed: ${response.status} ${errText.slice(0, 200)}`);
     }
 
-    const base64Image = image.inlineData.data;
-    const mimeType = image.inlineData.mimeType;
+    const data = await response.json();
+
+    // Gemini response: candidates[0].content.parts[] with inlineData
+    const parts = data?.candidates?.[0]?.content?.parts;
+    const imagePart = parts?.find((p: any) => p.inlineData?.data);
+
+    if (!imagePart?.inlineData?.data) {
+      console.error("Unexpected Gemini response:", JSON.stringify(data).slice(0, 300));
+      throw new Error("No image data in response");
+    }
 
     return NextResponse.json({
-      image: base64Image,
-      mimeType: mimeType || "image/png",
+      image: imagePart.inlineData.data,
+      mimeType: imagePart.inlineData.mimeType || "image/png",
     });
   } catch (error: any) {
     console.error("Error generating infographic:", error);

@@ -1,8 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-3-pro-image-preview";
+// Gemini native image generation (Nano Banana) - uses generateContent with responseModalities
+const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.0-flash-preview-image-generation";
+
+async function generateImage(apiKey: string, prompt: string): Promise<{ image: string; mimeType: string }> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+          imageConfig: {
+            aspectRatio: "16:9",
+          },
+        },
+      }),
+      signal: AbortSignal.timeout(90000),
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini image API error: ${response.status} ${errText.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+  const parts = data?.candidates?.[0]?.content?.parts;
+  const imagePart = parts?.find((p: any) => p.inlineData?.data);
+
+  if (!imagePart?.inlineData?.data) {
+    throw new Error("No image data in Gemini response");
+  }
+
+  return {
+    image: imagePart.inlineData.data,
+    mimeType: imagePart.inlineData.mimeType || "image/png",
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,15 +53,14 @@ export async function POST(req: NextRequest) {
     }
 
     const { items } = await req.json();
-    // items: Array<{ id: number, angle: string, keyInsight: string, articleTitle: string, url: string, infographicStyle?: string }>
-
     if (!items?.length) {
       return NextResponse.json({ error: "items array is required" }, { status: 400 });
     }
 
     const apiKey = process.env.GOOGLE_API_KEY || "";
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: MODEL });
+    if (!apiKey) {
+      return NextResponse.json({ error: "Infographic generation is not configured on this server" }, { status: 503 });
+    }
 
     const results: Array<{ id: number; image: string; mimeType: string } | { id: number; error: string }> = [];
 
@@ -53,20 +93,12 @@ Design specifications:
 - Clean minimal design, strong visual hierarchy, plenty of white space
 - URL in small text at the bottom
 - LinkedIn landscape dimensions (1200x627px)
-- High contrast, professional sans-serif typography
+- High contrast, professional sans-serif typography`;
 
-Return ONLY the image.`;
-
-        const result = await model.generateContent([{ text: prompt }]);
-        const parts = result.response.candidates?.[0]?.content?.parts ?? [];
-        const imagePart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/")) as any;
-
-        if (imagePart?.inlineData) {
-          results.push({ id: item.id, image: imagePart.inlineData.data, mimeType: imagePart.inlineData.mimeType });
-        } else {
-          results.push({ id: item.id, error: "No image generated" });
-        }
+        const { image, mimeType } = await generateImage(apiKey, prompt);
+        results.push({ id: item.id, image, mimeType });
       } catch (err) {
+        console.error(`Infographic failed for item ${item.id}:`, err);
         results.push({ id: item.id, error: String(err) });
       }
     }
