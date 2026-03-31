@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
       updateData.substackHandle = substackHandle;
     }
 
-    if (substackCookie !== undefined && !substackCookie.startsWith("*")) {
-      // Only update cookie if it's not the masked value
+    if (substackCookie !== undefined && !substackCookie.startsWith("*") && substackCookie.trim() !== "") {
+      // Only update cookie if it's not the masked value and not empty
       updateData.substackCookie = substackCookie;
     }
 
@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
       updateData.aiBaseUrl = aiBaseUrl;
     }
 
-    if (aiApiKey !== undefined && !aiApiKey.startsWith("*")) {
-      // Only update API key if it's not the masked value
+    if (aiApiKey !== undefined && !aiApiKey.startsWith("*") && aiApiKey.trim() !== "") {
+      // Only update API key if it's not the masked value and not empty
       updateData.aiApiKey = aiApiKey;
     }
 
