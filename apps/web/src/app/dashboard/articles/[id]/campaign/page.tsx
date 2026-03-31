@@ -27,7 +27,7 @@ interface CampaignItem {
   infographicStyle?: string;
   substackNote: string;
   linkedinPost: string;
-  infographic?: { image: string; mimeType: string } | null;
+  infographic?: { url: string; s3Key?: string; mimeType: string; image?: string } | null;
   infographicLoading?: boolean;
   substackPosted?: boolean;
   substackPostedAt?: string;
@@ -178,7 +178,7 @@ export default function CampaignPage() {
             const result = data.results.find((r: any) => r.id === item.id);
             if (!result) return { ...item, infographicLoading: false };
             if (result.error) return { ...item, infographicLoading: false };
-            return { ...item, infographicLoading: false, infographic: { image: result.image, mimeType: result.mimeType } };
+            return { ...item, infographicLoading: false, infographic: { url: result.url, s3Key: result.s3Key, mimeType: result.mimeType } };
           }),
         } : prev);
       }
@@ -220,15 +220,15 @@ export default function CampaignPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: item.substackNote }),
       });
-      if (res.ok) {
-        const postedAt = new Date().toISOString();
-        setAnalysis(prev => prev ? {
-          ...prev,
-          items: prev.items.map(i => i.id === item.id ? { ...i, substackPosted: true, substackPostedAt: postedAt } : i),
-        } : prev);
+      const data = await res.json();
+      if (res.ok && data.saved) {
+        // Copy note text to clipboard
+        try { await navigator.clipboard.writeText(data.content); } catch {}
+        // Open Substack Notes in new tab
+        window.open("https://substack.com/notes", "_blank");
+        alert("Note copied to clipboard! Paste it into Substack Notes.");
       } else {
-        const err = await res.json();
-        alert("Failed to post: " + (err.error || "Unknown error"));
+        alert("Failed to post: " + (data.error || "Unknown error"));
       }
     } catch {
       alert("Failed to post to Substack");
@@ -246,10 +246,11 @@ export default function CampaignPage() {
   };
 
   const downloadInfographic = (item: CampaignItem) => {
-    if (!item.infographic) return;
+    if (!item.infographic?.url) return;
     const link = document.createElement("a");
-    link.href = `data:${item.infographic.mimeType};base64,${item.infographic.image}`;
+    link.href = item.infographic.url;
     link.download = `infographic-${article?.id}-${item.id}.png`;
+    link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -287,12 +288,12 @@ export default function CampaignPage() {
         postedAt: item.linkedinPostedAt ?? null,
         createdAt: new Date().toISOString(),
       });
-      // Infographics are too large for DynamoDB — store metadata only
+      // Store S3 key reference — actual image lives in S3
       if (item.infographic) {
         assets.push({
           id: crypto.randomUUID(),
           type: "infographic",
-          content: `[infographic:${item.infographicStyle || "chart"}]`,
+          content: item.infographic.s3Key || item.infographic.url || `[infographic:${item.infographicStyle || "chart"}]`,
           angle: item.angle,
           status: "draft",
           createdAt: new Date().toISOString(),
@@ -560,7 +561,7 @@ export default function CampaignPage() {
                               disabled={postingId === item.id || item.substackPosted}
                               className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                              {postingId === item.id ? "Posting..." : item.substackPosted ? "✓ Posted" : "Post to Substack"}
+                              {postingId === item.id ? "Copying..." : item.substackPosted ? "✓ Posted" : "Copy & Open Substack"}
                             </button>
                           </div>
                         </div>

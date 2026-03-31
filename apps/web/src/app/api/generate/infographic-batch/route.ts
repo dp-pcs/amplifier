@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import crypto from "node:crypto";
+
+const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
+const ASSETS_BUCKET = process.env.ASSETS_BUCKET || "amplifier-dev-assets-913524910742";
 
 // gemini-3-pro-image-preview = "Nano Banana Pro" — generateContent with IMAGE modality
 const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-3-pro-image-preview";
@@ -67,7 +73,26 @@ Design specifications:
         const imagePart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/")) as any;
 
         if (imagePart?.inlineData) {
-          results.push({ id: item.id, image: imagePart.inlineData.data, mimeType: imagePart.inlineData.mimeType });
+          const { data: b64, mimeType } = imagePart.inlineData;
+          const ext = mimeType.split("/")[1] || "png";
+          const key = `infographics/${session.user!.email}/${crypto.randomUUID()}.${ext}`;
+          const buf = Buffer.from(b64, "base64");
+
+          // Upload to S3
+          await s3.send(new PutObjectCommand({
+            Bucket: ASSETS_BUCKET,
+            Key: key,
+            Body: buf,
+            ContentType: mimeType,
+          }));
+
+          // Generate presigned URL (valid 7 days)
+          const url = await getSignedUrl(s3, new GetObjectCommand({
+            Bucket: ASSETS_BUCKET,
+            Key: key,
+          }), { expiresIn: 7 * 24 * 60 * 60 });
+
+          results.push({ id: item.id, s3Key: key, url, mimeType });
         } else {
           results.push({ id: item.id, error: "No image generated" });
         }

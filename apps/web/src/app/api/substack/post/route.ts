@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getUser } from "@/lib/db";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import crypto from "node:crypto";
+
+const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
+const ASSETS_BUCKET = process.env.ASSETS_BUCKET || "amplifier-dev-assets-913524910742";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,65 +22,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get user's Substack cookie from DynamoDB
-    const user = await getUser(session.user.email);
-    if (!user?.substackCookie) {
-      return NextResponse.json(
-        { error: "Substack cookie not configured. Please add it in Settings." },
-        { status: 400 }
-      );
-    }
+    // Substack's /api/v1/comment/feed is behind Cloudflare bot protection —
+    // server-side requests are blocked regardless of headers.
+    // Workaround: save the note text to S3 so the user can copy and post
+    // directly from their browser on substack.com/notes.
+    const key = `substack-notes/${session.user.email}/${crypto.randomUUID()}.txt`;
 
-    // Build the connect.sid cookie value — strip prefix if already present, then re-add
-    const connectSidValue = user.substackCookie.replace(/^connect\.sid=/, "");
-    const connectSidCookie = `connect.sid=${connectSidValue}`;
+    await s3.send(new PutObjectCommand({
+      Bucket: ASSETS_BUCKET,
+      Key: key,
+      Body: content,
+      ContentType: "text/plain",
+    }));
 
-    // Create ProseMirror JSON document
-    const proseMirrorDoc = {
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [
-            {
-              type: "text",
-              text: content,
-            },
-          ],
-        },
-      ],
-    };
+    console.log(`Substack note saved to S3: ${key}`);
 
-    // Post to Substack Notes API
-    const response = await fetch("https://substack.com/api/v1/comment/feed", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: connectSidCookie,
-        Origin: "https://substack.com",
-        Referer: "https://substack.com/",
-      },
-      body: JSON.stringify({
-        body_json: JSON.stringify(proseMirrorDoc),
-        context: "feed",
-      }),
+    // Return the content back so the UI can put it in the clipboard
+    return NextResponse.json({
+      success: true,
+      saved: true,
+      content,
+      s3Key: key,
+      message: "Note saved. Copy the text and paste it into Substack Notes.",
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Substack API error ${response.status}:`, errorText.substring(0, 300));
-      const friendlyError = response.status === 401 || response.status === 403
-        ? "Substack rejected the request — your session cookie may have expired. Please update it in Settings."
-        : `Substack returned an error (${response.status})`;
-      return NextResponse.json({ error: friendlyError }, { status: response.status });
-    }
-
-    const result = await response.json();
-    return NextResponse.json({ success: true, result });
   } catch (error) {
-    console.error("Error posting to Substack:", error);
+    console.error("Error saving Substack note:", error);
     return NextResponse.json(
-      { error: "Failed to post to Substack" },
+      { error: "Failed to save note" },
       { status: 500 }
     );
   }
