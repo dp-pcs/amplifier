@@ -298,13 +298,23 @@ export default function CampaignPage() {
           assets,
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setSavedCampaignId(data.campaignId);
-        setTimeout(() => router.push("/dashboard/campaigns"), 1500);
+
+      let data: any;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Server returned an invalid response — the request may have timed out");
       }
-    } catch {
-      setError("Failed to save campaign");
+
+      if (!res.ok) {
+        throw new Error(data?.error || `Save failed (HTTP ${res.status})`);
+      }
+
+      setSavedCampaignId(data.campaignId);
+      // Give user 2.5s to see the success message before redirecting
+      setTimeout(() => router.push("/dashboard/campaigns"), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save campaign");
     } finally {
       setSavingCampaign(false);
     }
@@ -661,16 +671,32 @@ export default function CampaignPage() {
                 </button>
               </div>
 
-              <div>
+              <div className="flex flex-col items-end gap-2">
                 {savedCampaignId ? (
-                  <span className="text-green-600 font-medium text-sm">✓ Campaign saved! Redirecting...</span>
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+                    <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <div>
+                      <p className="text-green-700 font-semibold text-sm">Campaign saved!</p>
+                      <p className="text-green-600 text-xs">ID: {savedCampaignId.substring(0,8)}… · Redirecting to campaigns...</p>
+                    </div>
+                  </div>
                 ) : (
                   <button
                     onClick={handleSaveCampaign}
                     disabled={savingCampaign}
-                    className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
                   >
-                    {savingCampaign ? "Saving..." : "💾 Save Campaign"}
+                    {savingCampaign ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : "💾 Save Campaign"}
                   </button>
                 )}
               </div>
