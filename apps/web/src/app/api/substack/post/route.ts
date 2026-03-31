@@ -27,16 +27,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Parse the cookie to get connect.sid
-    const cookies = user.substackCookie.split("; ");
-    const connectSidCookie = cookies.find((c) => c.startsWith("connect.sid="));
-
-    if (!connectSidCookie) {
-      return NextResponse.json(
-        { error: "Invalid Substack cookie format" },
-        { status: 400 }
-      );
-    }
+    // Build the connect.sid cookie value — strip prefix if already present, then re-add
+    const connectSidValue = user.substackCookie.replace(/^connect\.sid=/, "");
+    const connectSidCookie = `connect.sid=${connectSidValue}`;
 
     // Create ProseMirror JSON document
     const proseMirrorDoc = {
@@ -71,11 +64,11 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Substack API error:", errorText);
-      return NextResponse.json(
-        { error: "Failed to post to Substack" },
-        { status: response.status }
-      );
+      console.error(`Substack API error ${response.status}:`, errorText.substring(0, 300));
+      const friendlyError = response.status === 401 || response.status === 403
+        ? "Substack rejected the request — your session cookie may have expired. Please update it in Settings."
+        : `Substack returned an error (${response.status})`;
+      return NextResponse.json({ error: friendlyError }, { status: response.status });
     }
 
     const result = await response.json();
