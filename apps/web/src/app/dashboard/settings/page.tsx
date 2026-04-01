@@ -35,6 +35,11 @@ export default function SettingsPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -80,11 +85,52 @@ export default function SettingsPage() {
         aiBaseUrl: provider.baseUrl,
         aiModel: provider.defaultModel,
       });
+      setTestResult(null); // Clear test result when provider changes
     }
   };
 
   const currentProvider = AI_PROVIDERS.find((p) => p.id === settings.aiProvider);
   const modelOptions = currentProvider?.models ?? [];
+
+  const handleTestConnection = async () => {
+    setTesting(true);
+    setTestResult(null);
+
+    try {
+      const response = await fetch("/api/settings/test-llm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          baseUrl: settings.aiBaseUrl,
+          apiKey: settings.aiApiKey,
+          model: settings.aiModel,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setTestResult({
+          type: "success",
+          text: `Connection successful! Model responded: "${data.response}"`,
+        });
+      } else {
+        setTestResult({
+          type: "error",
+          text: data.error || "Failed to connect to the LLM provider",
+        });
+      }
+    } catch (error) {
+      setTestResult({
+        type: "error",
+        text: "An error occurred while testing the connection",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -290,9 +336,10 @@ export default function SettingsPage() {
                     type="password"
                     id="aiApiKey"
                     value={settings.aiApiKey}
-                    onChange={(e) =>
-                      setSettings({ ...settings, aiApiKey: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setSettings({ ...settings, aiApiKey: e.target.value });
+                      setTestResult(null);
+                    }}
                     placeholder="Paste your API key here"
                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1"
                     style={{ borderColor: "#E2E8F0", color: "#0F172A" }}
@@ -323,6 +370,7 @@ export default function SettingsPage() {
                         onChange={(e) => {
                           if (e.target.value !== "__custom__") {
                             setSettings({ ...settings, aiModel: e.target.value });
+                            setTestResult(null);
                           }
                         }}
                         className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1"
@@ -345,7 +393,10 @@ export default function SettingsPage() {
                         <input
                           type="text"
                           value={settings.aiModel}
-                          onChange={(e) => setSettings({ ...settings, aiModel: e.target.value })}
+                          onChange={(e) => {
+                            setSettings({ ...settings, aiModel: e.target.value });
+                            setTestResult(null);
+                          }}
                           placeholder="Enter model ID"
                           className="w-full mt-2 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 text-sm font-mono"
                           style={{ borderColor: "#E2E8F0", color: "#0F172A" }}
@@ -365,9 +416,10 @@ export default function SettingsPage() {
                       type="text"
                       id="aiModel"
                       value={settings.aiModel}
-                      onChange={(e) =>
-                        setSettings({ ...settings, aiModel: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setSettings({ ...settings, aiModel: e.target.value });
+                        setTestResult(null);
+                      }}
                       placeholder="Model name (e.g. gpt-4o)"
                       className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1"
                       style={{ borderColor: "#E2E8F0", color: "#0F172A" }}
@@ -396,9 +448,10 @@ export default function SettingsPage() {
                       type="text"
                       id="aiBaseUrl"
                       value={settings.aiBaseUrl}
-                      onChange={(e) =>
-                        setSettings({ ...settings, aiBaseUrl: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setSettings({ ...settings, aiBaseUrl: e.target.value });
+                        setTestResult(null);
+                      }}
                       placeholder="https://api.example.com/v1"
                       className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1"
                       style={{ borderColor: "#E2E8F0", color: "#0F172A" }}
@@ -488,6 +541,44 @@ export default function SettingsPage() {
                     )}
                   </p>
                 </div>
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleTestConnection}
+                    disabled={testing || !settings.aiApiKey || !settings.aiModel || (settings.aiProvider === "custom" && !settings.aiBaseUrl)}
+                    className="w-full font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: testing ? "#94A3B8" : "#10B981",
+                      color: "#FFFFFF"
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!testing && settings.aiApiKey && settings.aiModel && (settings.aiProvider !== "custom" || settings.aiBaseUrl)) {
+                        e.currentTarget.style.background = "#059669";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!testing) {
+                        e.currentTarget.style.background = "#10B981";
+                      }
+                    }}
+                  >
+                    {testing ? "Testing Connection..." : "Test Connection"}
+                  </button>
+                </div>
+
+                {testResult && (
+                  <div
+                    className="p-3 rounded-lg border text-sm"
+                    style={
+                      testResult.type === "success"
+                        ? { background: "#F0FDF4", borderColor: "#16A34A", color: "#166534" }
+                        : { background: "#FEF2F2", borderColor: "#DC2626", color: "#991B1B" }
+                    }
+                  >
+                    {testResult.text}
+                  </div>
+                )}
               </div>
 
               <div>
